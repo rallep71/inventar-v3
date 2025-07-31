@@ -1,0 +1,53 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Home - Inventar v3{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto text-center">
+        <h1 class="display-4 mb-4">
+            <i class="bi bi-box-seam text-primary"></i> Inventar v3
+        </h1>
+        <p class="lead">Moderne Inventarverwaltung mit Flask & HTMX</p>
+        
+        <div class="d-grid gap-2 d-md-block mt-5">
+            <a href="/items" class="btn btn-primary btn-lg">
+                <i class="bi bi-list"></i> Artikel anzeigen
+            </a>
+            <a href="/items/add" class="btn btn-success btn-lg">
+                <i class="bi bi-plus-circle"></i> Artikel hinzufügen
+            </a>
+        </div>
+        
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-speedometer2 display-4 text-primary"></i>
+                        <h5 class="card-title mt-3">Schnell</h5>
+                        <p class="card-text">HTMX für blitzschnelle Updates</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-phone display-4 text-success"></i>
+                        <h5 class="card-title mt-3">Mobil</h5>
+                        <p class="card-text">Responsive Design für alle Geräte</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-shield-check display-4 text-warning"></i>
+                        <h5 class="card-title mt-3">Sicher</h5>
+                        <p class="card-text">Moderne Sicherheitsstandards</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

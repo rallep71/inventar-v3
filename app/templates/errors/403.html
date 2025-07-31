@@ -1,0 +1,23 @@
+=== app/templates/errors/403.html ===
+{% extends "layout/base.html" %}
+{% block title %}403 - Zugriff verweigert{% endblock %}
+{% block content %}
+<div class="text-center">
+    <h1 class="display-1">403</h1>
+    <p class="fs-3"><span class="text-danger">Zugriff verweigert!</span></p>
+    <p class="lead">Sie haben keine Berechtigung für diese Seite.</p>
+    <a href="/" class="btn btn-primary">Zur Startseite</a>
+</div>
+{% endblock %}
+
+=== app/templates/errors/500.html ===
+{% extends "layout/base.html" %}
+{% block title %}500 - Server Fehler{% endblock %}
+{% block content %}
+<div class="text-center">
+    <h1 class="display-1">500</h1>
+    <p class="fs-3"><span class="text-danger">Server Fehler!</span></p>
+    <p class="lead">Etwas ist schief gelaufen.</p>
+    <a href="/" class="btn btn-primary">Zur Startseite</a>
+</div>
+{% endblock %}
