@@ -1,115 +1,46 @@
-{% extends "layout/base.html" %}
-
-{% block title %}Anmelden - Inventar App{% endblock %}
-
-{% block content %}
-<div class="min-vh-100 d-flex align-items-center py-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12 col-md-6 col-lg-4">
-                <!-- Login Card mit Glassmorphism -->
-                <div class="card border-0 shadow-lg" style="backdrop-filter: blur(10px); background: rgba(var(--bs-body-bg-rgb), 0.85);">
-                    <div class="card-body p-4 p-md-5">
-                        <!-- Logo/Header -->
-                        <div class="text-center mb-4">
-                            <div class="rounded-circle bg-primary bg-gradient d-inline-flex align-items-center justify-content-center mb-3" 
-                                 style="width: 80px; height: 80px;">
-                                <i class="bi bi-box-seam text-white" style="font-size: 2.5rem;"></i>
-                            </div>
-                            <h2 class="h3 mb-1">Inventar App</h2>
-                            <p class="text-muted">Melden Sie sich an, um fortzufahren</p>
-                        </div>
-
-                        <!-- Login Form Container -->
-                        <div id="auth-container">
-                            {% include 'auth/partials/login_form.html' %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Footer Info -->
-                <div class="text-center mt-4">
-                    <small class="text-muted">
-                        <i class="bi bi-shield-check me-1"></i>
-                        Sichere Verbindung
-                    </small>
-                </div>
-            </div>
+<!-- app/templates/auth/partials/login_form.html -->
+<form hx-post="{{ url_for('auth.login') }}" 
+      hx-target="#login-container" 
+      hx-swap="innerHTML"
+      class="needs-validation">
+    
+    {{ form.hidden_tag() }}
+    
+    <!-- Username -->
+    <div class="mb-3">
+        {{ form.username.label(class="form-label") }}
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
+        </div>
+        {% for error in form.username.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+        {% endfor %}
+    </div>
+    
+    <!-- Password -->
+    <div class="mb-3">
+        {{ form.password.label(class="form-label") }}
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-key"></i></span>
+            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), type="password") }}
+        </div>
+        {% for error in form.password.errors %}
+            <div class="invalid-feedback d-block">{{ error }}</div>
+        {% endfor %}
+    </div>
+    
+    <!-- Remember -->
+    <div class="mb-3">
+        <div class="form-check">
+            {{ form.remember(class="form-check-input") }}
+            {{ form.remember.label(class="form-check-label") }}
         </div>
     </div>
-</div>
-
-<!-- Loading Overlay -->
-<div id="auth-loading" class="htmx-indicator">
-    <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-         style="background: rgba(0,0,0,0.5); z-index: 9999;">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Laden...</span>
-        </div>
-    </div>
-</div>
-
-<style>
-/* Login Page Specific Styles */
-.form-control:focus {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.15);
-}
-
-.btn-primary {
-    background: linear-gradient(45deg, var(--bs-primary), var(--bs-indigo));
-    border: none;
-    transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(var(--bs-primary-rgb), 0.3);
-}
-
-/* Smooth transitions */
-#auth-container {
-    transition: opacity 0.3s ease;
-}
-
-.htmx-swapping #auth-container {
-    opacity: 0.5;
-}
-
-/* Password toggle button */
-.password-toggle {
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-
-.password-toggle:hover {
-    color: var(--bs-primary);
-}
-</style>
-
-<script>
-// Password visibility toggle
-document.addEventListener('click', function(e) {
-    if (e.target.matches('.password-toggle')) {
-        const input = e.target.closest('.input-group').querySelector('input');
-        const icon = e.target.querySelector('i');
-        
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.classList.replace('bi-eye', 'bi-eye-slash');
-        } else {
-            input.type = 'password';
-            icon.classList.replace('bi-eye-slash', 'bi-eye');
-        }
-    }
-});
-
-// Auto-focus on first input
-document.addEventListener('htmx:afterSwap', function(evt) {
-    const firstInput = evt.detail.target.querySelector('input:not([type="hidden"])');
-    if (firstInput) {
-        firstInput.focus();
-    }
-});
-</script>
-{% endblock %}
+    
+    <!-- Submit -->
+    <button type="submit" class="btn btn-primary w-100">
+        <span class="htmx-indicator spinner-border spinner-border-sm me-2"></span>
+        <i class="bi bi-box-arrow-in-right"></i> Anmelden
+    </button>
+</form>
