@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ title or 'Inventar v3' }}{% endblock %}</title>
+    <title>{% block title %}Inventar v3{% endblock %}</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -31,15 +31,20 @@
                                 <i class="bi bi-list"></i> Artikel
                             </a>
                         </li>
+                        {% if current_user.is_admin() %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.index') }}">
+                            <a class="nav-link" href="/admin/">
                                 <i class="bi bi-gear"></i> Admin
                             </a>
                         </li>
+                        {% endif %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.logout') }}">
-                                <i class="bi bi-box-arrow-right"></i> Logout
-                            </a>
+                            <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="nav-link btn btn-link">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </button>
+                            </form>
                         </li>
                     {% else %}
                         <li class="nav-item">
@@ -54,11 +59,60 @@
     </nav>
     
     <main class="container my-4">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
         {% block content %}{% endblock %}
     </main>
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- HTMX Toast Support -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="toastContainer"></div>
+    </div>
+    
+    <script>
+    // HTMX Toast Handler
+    document.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.xhr.getResponseHeader('HX-Trigger')) {
+            try {
+                const triggers = JSON.parse(evt.detail.xhr.getResponseHeader('HX-Trigger'));
+                if (triggers.showToast) {
+                    showToast(triggers.showToast.message, triggers.showToast.category);
+                }
+            } catch (e) {}
+        }
+    });
+    
+    function showToast(message, category = 'info') {
+        const toastHtml = `
+            <div class="toast show align-items-center text-bg-${category} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+        document.getElementById('toastContainer').insertAdjacentHTML('beforeend', toastHtml);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            const toasts = document.querySelectorAll('.toast.show');
+            toasts.forEach(toast => toast.remove());
+        }, 5000);
+    }
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>

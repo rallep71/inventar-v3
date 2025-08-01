@@ -6,14 +6,14 @@ from app.main import main
 
 
 @main.route('/')
-def index():
+def home():
     """Homepage - redirect to items if logged in"""
     if current_user.is_authenticated:
         return redirect(url_for('items.index'))
     return redirect(url_for('auth.login'))
 
 
-@main.route('/home')
-def home():
-    """Alternative home route"""
-    return index()
+@main.route('/about')
+def about():
+    """About page"""
+    return render_template('main/about.html')
