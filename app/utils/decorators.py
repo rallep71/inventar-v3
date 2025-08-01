@@ -3,6 +3,7 @@
 from functools import wraps
 from flask import abort, redirect, url_for, flash
 from flask_login import current_user
+from app.models.team import Team
 
 
 def admin_required(f):

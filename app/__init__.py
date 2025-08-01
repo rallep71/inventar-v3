@@ -1,10 +1,11 @@
 # app/__init__.py
+"""Flask Application Factory"""
 import os
 import logging
 from datetime import timedelta
 from flask import Flask, render_template, g, session
 from app.config import Config
-from app.extensions import init_extensions, db, limiter
+from app.extensions import init_extensions, db
 from flask_wtf.csrf import generate_csrf
 
 
@@ -13,11 +14,8 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Session Configuration
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['SESSION_COOKIE_SECURE'] = app.config.get('SESSION_COOKIE_SECURE', False)
+    # Ensure upload folder exists
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
     # Initialize extensions
     init_extensions(app)
@@ -54,19 +52,32 @@ def create_app(config_class=Config):
     
     # Register blueprints
     from app.main import main
-    from app.auth import auth
-    from app.items import items
-    from app.admin import admin
-    from app.api import api
-    
     app.register_blueprint(main)
-    app.register_blueprint(auth, url_prefix='/auth')
-    app.register_blueprint(items, url_prefix='/items')
-    app.register_blueprint(admin, url_prefix='/admin')
-    app.register_blueprint(api, url_prefix='/api')
     
-    # Rate limiting for auth routes
-    limiter.limit("5 per minute")(auth)
+    # Conditional blueprint registration (create empty modules if needed)
+    try:
+        from app.auth import auth
+        app.register_blueprint(auth, url_prefix='/auth')
+    except ImportError:
+        app.logger.warning("Auth module not found")
+    
+    try:
+        from app.items import items
+        app.register_blueprint(items, url_prefix='/items')
+    except ImportError:
+        app.logger.warning("Items module not found")
+    
+    try:
+        from app.admin import admin
+        app.register_blueprint(admin, url_prefix='/admin')
+    except ImportError:
+        app.logger.warning("Admin module not found")
+    
+    try:
+        from app.api import api
+        app.register_blueprint(api, url_prefix='/api')
+    except ImportError:
+        app.logger.warning("API module not found")
     
     # Error handlers
     @app.errorhandler(404)
@@ -75,22 +86,11 @@ def create_app(config_class=Config):
             return render_template('errors/404_partial.html'), 404
         return render_template('errors/404.html'), 404
     
-    @app.errorhandler(403)
-    def forbidden_error(error):
-        if is_htmx_request():
-            return render_template('errors/403_partial.html'), 403
-        return render_template('errors/403.html'), 403
-    
     @app.errorhandler(500)
     def internal_error(error):
         db.session.rollback()
         if is_htmx_request():
             return render_template('errors/500_partial.html'), 500
         return render_template('errors/500.html'), 500
-    
-    # Create upload folder
-    upload_folder = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder)
     
     return app

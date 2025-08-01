@@ -35,7 +35,7 @@ class Team(db.Model):
     # Relationships
     members = db.relationship('User', secondary=team_members, 
                             backref=db.backref('teams', lazy='dynamic'))
-    creator = db.relationship('User', foreign_keys=[created_by])
+    creator = db.relationship('User', foreign_keys=[created_by], back_populates='created_teams')
     
     def __repr__(self):
         return f'<Team {self.name}>'

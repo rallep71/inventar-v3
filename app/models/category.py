@@ -1,3 +1,4 @@
+# app/models/category.py
 """Category model"""
 from app.extensions import db
 

@@ -1,33 +1,41 @@
 # Flask Core
 Flask==3.0.0
-Flask-SQLAlchemy==3.1.1
-Flask-Login==0.6.3
-Flask-WTF==1.2.1
-Flask-Bcrypt==1.0.1
-Flask-Limiter==3.5.0
-Flask-Talisman==1.1.0
+Werkzeug==3.0.1
 
 # Database
+Flask-SQLAlchemy==3.1.1
 SQLAlchemy==2.0.23
-PyMySQL==1.1.0
-alembic==1.13.1
+PyMySQL==1.1.0  # für MySQL
+# psycopg2-binary==2.9.9  # für PostgreSQL
+
+# Authentication
+Flask-Login==0.6.3
+Flask-Bcrypt==1.0.1
 
 # Forms & Validation
+Flask-WTF==1.2.1
 WTForms==3.1.1
 email-validator==2.1.1
 
-# Security & Auth
-pyotp==2.9.0
-qrcode[pil]==7.4.2
+# Security
+Flask-Limiter==3.5.0
+Flask-Talisman==1.1.0
 
-# Images
-Pillow==10.1.0
-pillow-heif==0.13.1
+# Environment
+python-dotenv==1.0.0
 
 # Utils
-python-dotenv==1.0.0
-redis==5.0.1
+Pillow==10.1.0  # Image processing
+qrcode==7.4.2  # QR Code generation
+python-barcode==0.15.1  # Barcode generation
+
+# Development
+flask-shell-ipython==0.4.1
 
 # Production
 gunicorn==21.2.0
-gevent==23.9.1
+redis==5.0.1  # für Rate Limiting und Caching
+
+# Optional - Background Tasks
+# celery==5.3.4
+# celery[redis]==5.3.4

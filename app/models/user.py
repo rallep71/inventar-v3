@@ -1,3 +1,4 @@
+# app/models/user.py
 """User model"""
 from datetime import datetime
 from flask_login import UserMixin
@@ -10,7 +11,6 @@ class User(UserMixin, db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
-    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='user')
     is_active = db.Column(db.Boolean, default=True)
@@ -24,8 +24,10 @@ class User(UserMixin, db.Model):
     last_login = db.Column(db.DateTime)
     
     # Relationships
-    created_items = db.relationship('Item', backref='creator', lazy='dynamic')
+    created_items = db.relationship('Item', foreign_keys='Item.created_by', back_populates='creator', lazy='dynamic')
     logs = db.relationship('Log', backref='user', lazy='dynamic')
+    created_teams = db.relationship('Team', foreign_keys='Team.created_by', back_populates='creator', lazy='dynamic')
+    # teams relationship is created by backref in Team model via secondary table
     
     def set_password(self, password):
         """Hash and set password"""

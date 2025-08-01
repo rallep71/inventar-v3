@@ -1,209 +1,65 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="light">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Inventar Management System">
-    <!-- PWA Meta Tags -->
-<meta name="theme-color" content="#0d6efd">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Inventar">
-<meta name="mobile-web-app-capable" content="yes">
-
-<!-- PWA Manifest -->
-<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-
-<!-- Icons -->
-<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/icon-32x32.png') }}">
-<link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/icon-16x16.png') }}">
-<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}"> 
-    <title>{% block title %}Inventar v3{% endblock %}</title>
+    <title>{% block title %}{{ title or 'Inventar v3' }}{% endblock %}</title>
     
-    <!-- Bootstrap 5.3 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
-    
-    <!-- Custom CSS -->
-    <style>
-        :root {
-            --primary: #0d6efd;
-            --secondary: #6c757d;
-        }
-        
-        [data-theme="dark"] {
-            --bs-body-bg: #1a1a1a;
-            --bs-body-color: #e9ecef;
-        }
-        
-        .htmx-indicator {
-            display: none;
-        }
-        .htmx-request .htmx-indicator {
-            display: inline-block;
-        }
-        .htmx-request.htmx-indicator {
-            display: inline-block;
-        }
-        
-        /* Toast animations */
-        .toast { animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-    </style>
-    {% block styles %}{% endblock %}
-</head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="bi bi-box-seam"></i> Inventar v3
-            </a>
-            <!-- PWA Install Button -->
-<li class="nav-item d-none" id="install-button-container">
-    <button class="btn btn-sm btn-outline-light" id="install-button">
-        <i class="bi bi-download"></i> Installieren
-    </button>
-</li>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/items">
-                            <i class="bi bi-list"></i> Artikel
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/items/add">
-                            <i class="bi bi-plus-circle"></i> Neu
-                        </a>
-                    </li>
-                </ul>
-                
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <button class="btn btn-link nav-link" onclick="toggleTheme()">
-                            <i class="bi bi-moon-stars" id="theme-icon"></i>
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/auth/login">
-                            <i class="bi bi-box-arrow-in-right"></i> Login
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    <!-- Offline Banner -->
-<div id="offline-banner" class="alert alert-warning text-center m-0 d-none">
-    <i class="bi bi-wifi-off"></i> Sie sind offline - Einige Funktionen sind eingeschränkt
-</div>
-    <!-- Toast Container -->
-    <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
-    
-    <!-- Flash Messages (wird durch Toast ersetzt) -->
-    <div class="container mt-3" id="flash-container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
-    
-    <!-- Main Content -->
-    <main class="container my-4">
-        <div class="htmx-indicator position-fixed top-50 start-50 translate-middle">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Laden...</span>
-            </div>
-        </div>
-        
-        {% block content %}{% endblock %}
-    </main>
-    
-    <!-- Footer -->
-    <footer class="bg-light py-3 mt-5">
-        <div class="container text-center text-muted">
-            <small>&copy; 2024 Inventar v3.0</small>
-        </div>
-    </footer>
-    
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="bi bi-box-seam"></i> Inventar v3
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('items.index') }}">
+                                <i class="bi bi-list"></i> Artikel
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.index') }}">
+                                <i class="bi bi-gear"></i> Admin
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                                <i class="bi bi-box-arrow-right"></i> Logout
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
     
-    <!-- Toast System -->
-    <script src="{{ url_for('static', filename='src/js/modules/toast.js') }}"></script>
-
-    <!-- PWA System -->
-    <script src="{{ url_for('static', filename='src/js/modules/pwa.js') }}"></script>
-
-    <!-- Base JS -->
-    <script>
-        // Theme Toggle
-        function toggleTheme() {
-            const html = document.documentElement;
-            const current = html.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-            
-            const icon = document.getElementById('theme-icon');
-            icon.className = next === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
-        }
-        
-        // Load saved theme
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        document.getElementById('theme-icon').className = savedTheme === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
-        
-        // HTMX Config
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            event.detail.headers['X-CSRFToken'] = '{{ csrf_token() }}';
-        });
-        
-        // Convert Flask flash messages to toasts
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                document.addEventListener('DOMContentLoaded', () => {
-                    {% for category, message in messages %}
-                        showToast('{{ message }}', '{{ "error" if category == "danger" else category }}');
-                    {% endfor %}
-                });
-       
-        // Offline Detection
-function updateOnlineStatus() {
-    const banner = document.getElementById('offline-banner');
-    if (!navigator.onLine) {
-        banner.classList.remove('d-none');
-    } else {
-        banner.classList.add('d-none');
-    }
-}
-
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
-updateOnlineStatus();  
-            {% endif %}
-        {% endwith %}
-    </script>
-    {% block scripts %}{% endblock %}
+    <main class="container my-4">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

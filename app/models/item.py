@@ -77,7 +77,7 @@ class Item(db.Model):
     categories = db.relationship('Category', secondary=item_categories, 
                                lazy='subquery', backref=db.backref('items', lazy=True))
     logs = db.relationship('Log', backref='item', lazy='dynamic', cascade='all, delete-orphan')
-    creator = db.relationship('User', backref='created_items', foreign_keys=[created_by])
+    creator = db.relationship('User', foreign_keys=[created_by], back_populates='created_items')
     team = db.relationship('Team', backref='items')
     
     def __repr__(self):

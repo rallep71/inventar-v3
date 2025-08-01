@@ -1,3 +1,4 @@
+# app/models/log.py
 """Log model for activity tracking"""
 from datetime import datetime
 from app.extensions import db
