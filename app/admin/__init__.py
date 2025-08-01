@@ -4,7 +4,5 @@ from flask import Blueprint
 
 admin = Blueprint('admin', __name__)
 
-# Temporär - wird später implementiert
-@admin.route('/')
-def index():
-    return "Admin Panel - Coming Soon"
+# Import routes after blueprint creation to avoid circular imports
+from app.admin import routes

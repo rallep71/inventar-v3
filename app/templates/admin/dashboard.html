@@ -1,0 +1,144 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Admin Dashboard - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">
+                <i class="bi bi-speedometer2"></i> Admin Dashboard
+            </h1>
+            <p class="text-muted">Systemübersicht und Verwaltung</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Total Items -->
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Artikel gesamt</h6>
+                            <h2 class="card-title mb-0">{{ stats.total_items }}</h2>
+                        </div>
+                        <i class="bi bi-box-seam fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users -->
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Benutzer</h6>
+                            <h2 class="card-title mb-0">{{ stats.total_users }}</h2>
+                        </div>
+                        <i class="bi bi-people fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock -->
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Niedriger Bestand</h6>
+                            <h2 class="card-title mb-0">{{ stats.low_stock_items }}</h2>
+                        </div>
+                        <i class="bi bi-exclamation-triangle fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Borrowed Items -->
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Ausgeliehen</h6>
+                            <h2 class="card-title mb-0">{{ stats.borrowed_items }}</h2>
+                        </div>
+                        <i class="bi bi-arrow-left-right fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning"></i> Schnellzugriff
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin.users') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-people"></i> Benutzerverwaltung
+                        </a>
+                        <a href="{{ url_for('admin.categories') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-tags"></i> Kategorieverwaltung
+                        </a>
+                        <a href="{{ url_for('admin.teams') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-people-fill"></i> Teamverwaltung
+                        </a>
+                        <a href="{{ url_for('admin.system') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-gear"></i> Systemeinstellungen
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history"></i> Letzte Aktivitäten
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if stats.recent_logs %}
+                        <div class="list-group list-group-flush">
+                            {% for log in stats.recent_logs[:5] %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex justify-content-between">
+                                    <small>
+                                        <strong>{{ log.user.username }}</strong>
+                                        {{ log.action }}
+                                    </small>
+                                    <small class="text-muted">
+                                        {{ log.timestamp.strftime('%d.%m. %H:%M') }}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <a href="{{ url_for('admin.logs') }}" class="btn btn-sm btn-link">
+                            Alle Logs anzeigen →
+                        </a>
+                    {% else %}
+                        <p class="text-muted mb-0">Keine Aktivitäten vorhanden</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
