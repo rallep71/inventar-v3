@@ -1,11 +1,23 @@
-
 <!DOCTYPE html>
 <html lang="de" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Inventar Management System">
-    
+    <!-- PWA Meta Tags -->
+<meta name="theme-color" content="#0d6efd">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Inventar">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+<!-- Icons -->
+<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/icon-32x32.png') }}">
+<link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/icon-16x16.png') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}"> 
     <title>{% block title %}Inventar v3{% endblock %}</title>
     
     <!-- Bootstrap 5.3 CSS -->
@@ -50,7 +62,12 @@
             <a class="navbar-brand" href="/">
                 <i class="bi bi-box-seam"></i> Inventar v3
             </a>
-            
+            <!-- PWA Install Button -->
+<li class="nav-item d-none" id="install-button-container">
+    <button class="btn btn-sm btn-outline-light" id="install-button">
+        <i class="bi bi-download"></i> Installieren
+    </button>
+</li>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -84,7 +101,10 @@
             </div>
         </div>
     </nav>
-    
+    <!-- Offline Banner -->
+<div id="offline-banner" class="alert alert-warning text-center m-0 d-none">
+    <i class="bi bi-wifi-off"></i> Sie sind offline - Einige Funktionen sind eingeschränkt
+</div>
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
     
@@ -131,7 +151,10 @@
     
     <!-- Toast System -->
     <script src="{{ url_for('static', filename='src/js/modules/toast.js') }}"></script>
-    
+
+    <!-- PWA System -->
+    <script src="{{ url_for('static', filename='src/js/modules/pwa.js') }}"></script>
+
     <!-- Base JS -->
     <script>
         // Theme Toggle
@@ -164,6 +187,20 @@
                         showToast('{{ message }}', '{{ "error" if category == "danger" else category }}');
                     {% endfor %}
                 });
+       
+        // Offline Detection
+function updateOnlineStatus() {
+    const banner = document.getElementById('offline-banner');
+    if (!navigator.onLine) {
+        banner.classList.remove('d-none');
+    } else {
+        banner.classList.add('d-none');
+    }
+}
+
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();  
             {% endif %}
         {% endwith %}
     </script>
