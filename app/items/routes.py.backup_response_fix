@@ -184,73 +184,91 @@ def scan():
 
 # Fixed add route for app/items/routes.py
 
-# EINFACHE VERSION DER add() FUNKTION
-# Kopiere diese komplette Funktion in deine app/items/routes.py
-
 @items.route("/add", methods=['GET', 'POST'])
 @login_required
 def add():
-    """Add new item - SIMPLE VERSION"""
-    # GET Request - Zeige Formular
+    """Add new item"""
     if request.method == 'GET':
         categories = Category.query.filter_by(is_active=True).order_by(Category.name).all()
         return render_template('items/add.html', categories=categories)
     
-    # POST Request - Speichere Artikel
-    name = request.form.get('name', '').strip()
-    quantity = int(request.form.get('quantity', 1))
-    category_ids = request.form.getlist('category_ids')
-    
-    # Validierung
-    if not name or not category_ids:
-        flash('Name und Kategorie sind erforderlich', 'error')
-        return redirect(url_for('items.add'))
-    
-    # Kategorie für ID
-    category = Category.query.get(category_ids[0])
-    if not category:
-        flash('Ungültige Kategorie', 'error')
-        return redirect(url_for('items.add'))
-    
-    # Artikel erstellen
-    item = Item(
-        item_uid=generate_item_id(category.prefix),
-        name=name,
-        quantity=quantity,
-        created_by=current_user.id
-    )
-    
-    # Optionale Felder
-    item.brand = request.form.get('brand', '')
-    item.location = request.form.get('location', '')
-    
-    # Preis-Felder (mit korrektem Mapping)
-    if hasattr(Item, 'price'):
-        # Form hat 'sale_price', DB hat 'price'
-        item.price = float(request.form.get('sale_price', 0))
-    if hasattr(Item, 'purchase_price'):
-        item.purchase_price = float(request.form.get('purchase_price', 0))
-    
-    # Weitere Felder
-    if hasattr(Item, 'notes'):
-        # Form hat 'description', DB hat 'notes'
-        item.notes = request.form.get('description', '')
-    if hasattr(Item, 'condition'):
-        # Form hat 'status', DB hat 'condition'
-        item.condition = request.form.get('status', 'Gut')
-    
-    # Kategorien hinzufügen
-    for cat_id in category_ids:
-        cat = Category.query.get(cat_id)
-        if cat:
-            item.categories.append(cat)
-    
-    # Speichern
+    # Handle POST - Create new item
     try:
+        # Get form data
+        name = request.form.get('name', '').strip()
+        quantity = int(request.form.get('quantity', 0))
+        category_ids = request.form.getlist('category_ids')
+        
+        # Validation
+        if not name:
+            if request.headers.get('HX-Request'):
+                return '<div class="alert alert-danger">Name ist erforderlich</div>', 400
+            flash('Name ist erforderlich', 'error')
+            return redirect(url_for('items.add'))
+        
+        if not category_ids:
+            if request.headers.get('HX-Request'):
+                return '<div class="alert alert-danger">Mindestens eine Kategorie muss ausgewählt werden</div>', 400
+            flash('Mindestens eine Kategorie muss ausgewählt werden', 'error')
+            return redirect(url_for('items.add'))
+        
+        # Get primary category for ID generation
+        primary_category = Category.query.get(category_ids[0])
+        if not primary_category:
+            if request.headers.get('HX-Request'):
+                return '<div class="alert alert-danger">Ungültige Kategorie</div>', 400
+            flash('Ungültige Kategorie', 'error')
+            return redirect(url_for('items.add'))
+        
+        # Create new item with ONLY existing fields
+        item = Item(
+            item_uid=generate_item_id(primary_category.prefix),
+            name=name,
+            brand=request.form.get('brand', '').strip(),
+            model=request.form.get('model', '').strip(),
+            quantity=quantity,
+            location=request.form.get('location', '').strip(),
+            room=request.form.get('room', '').strip(),
+            shelf=request.form.get('shelf', '').strip(),
+            compartment=request.form.get('compartment', '').strip(),  # This exists in model
+            purchase_price=float(request.form.get('purchase_price') or 0),
+            price=float(request.form.get('sale_price') or 0),  # Map sale_price to price
+            description=request.form.get('description', '').strip(),
+            serial_number=request.form.get('serial_number', '').strip(),
+            notes=request.form.get('description', '').strip(),  # Map description to notes
+            condition=request.form.get('status', 'Gut'),  # Map status to condition
+            created_by=current_user.id,
+            team_id=current_user.teams[0].id if current_user.teams else None
+        )
+        
+        # Handle image upload
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                # Add timestamp to filename
+                name_parts = filename.rsplit('.', 1)
+                filename = f"{name_parts[0]}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{name_parts[1]}"
+                
+                # Ensure upload folder exists
+                upload_folder = Config.UPLOAD_FOLDER
+                os.makedirs(upload_folder, exist_ok=True)
+                
+                filepath = os.path.join(upload_folder, filename)
+                file.save(filepath)
+                item.image_file = filename
+        
+        # Add categories
+        for cat_id in category_ids:
+            category = Category.query.get(cat_id)
+            if category:
+                item.categories.append(category)
+        
+        # Save to database
         db.session.add(item)
         db.session.commit()
         
-        # Log
+        # Log action
         log = Log(
             user_id=current_user.id,
             item_id=item.id,
@@ -260,18 +278,24 @@ def add():
         db.session.add(log)
         db.session.commit()
         
-        flash(f'Artikel {item.item_uid} erfolgreich erstellt!', 'success')
+        flash(f'Artikel {item.item_uid} wurde erfolgreich erstellt!', 'success')
         
-        # WICHTIG: Einfacher Redirect ohne HTMX
-        # Option 1: Zur Detail-Seite (wenn sie existiert)
-        # return redirect(url_for('items.detail', id=item.id))
+        # HTMX redirect - Return empty response with redirect header
+        if request.headers.get('HX-Request'):
+            response = make_response()
+            response.headers['HX-Redirect'] = url_for('items.detail', id=item.id)
+            return response
         
-        # Option 2: Zur Index-Seite (funktioniert immer)
-        return redirect(url_for('items.index'))
+        return redirect(url_for('items.detail', id=item.id))
         
     except Exception as e:
         db.session.rollback()
-        flash(f'Fehler: {str(e)}', 'error')
+        error_msg = f'Fehler beim Erstellen des Artikels: {str(e)}'
+        
+        if request.headers.get('HX-Request'):
+            return f'<div class="alert alert-danger">{error_msg}</div>', 400
+            
+        flash(error_msg, 'error')
         return redirect(url_for('items.add'))
 
 @items.route("/check_duplicate")
@@ -466,8 +490,8 @@ def delete(id):
         db.session.commit()
         
         # HTMX response - redirect to index
-        response = redirect(url_for("items.detail", id=item.id))
-        
+        response = make_response()
+        response.headers['HX-Redirect'] = url_for('items.index')
         return response
         
     except Exception as e:

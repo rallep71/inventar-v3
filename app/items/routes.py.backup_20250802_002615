@@ -467,7 +467,7 @@ def delete(id):
         
         # HTMX response - redirect to index
         response = redirect(url_for("items.detail", id=item.id))
-        
+        response.headers['HX-Redirect'] = url_for('items.index')
         return response
         
     except Exception as e:

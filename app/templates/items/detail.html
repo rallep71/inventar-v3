@@ -1,0 +1,58 @@
+# Add these routes to your app/items/routes.py file
+
+@items.route("/search/<item_uid>")
+@login_required
+def search_by_uid(item_uid):
+    """Search and redirect to item by UID"""
+    item = Item.query.filter_by(item_uid=item_uid).first()
+    
+    if item:
+        # Check access rights
+        if not current_user.is_admin():
+            team_ids = [team.id for team in current_user.teams]
+            if item.team_id and item.team_id not in team_ids:
+                flash('Sie haben keine Berechtigung, diesen Artikel anzuzeigen.', 'error')
+                return redirect(url_for('items.index'))
+        
+        return redirect(url_for('items.detail', id=item.id))
+    else:
+        flash(f'Artikel mit ID {item_uid} nicht gefunden.', 'warning')
+        return redirect(url_for('items.scan'))
+
+@items.route("/search_by_id")
+@login_required
+def search_by_id():
+    """AJAX search by item ID (for manual input)"""
+    item_uid = request.args.get('item_uid', '').strip().upper()
+    
+    if not item_uid:
+        return '<div class="alert alert-warning">Bitte geben Sie eine Artikel-ID ein.</div>'
+    
+    item = Item.query.filter_by(item_uid=item_uid).first()
+    
+    if item:
+        # Check access rights
+        if not current_user.is_admin():
+            team_ids = [team.id for team in current_user.teams]
+            if item.team_id and item.team_id not in team_ids:
+                return '<div class="alert alert-danger">Keine Berechtigung für diesen Artikel.</div>'
+        
+        # Return item card
+        return f'''
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5 class="card-title">{item.name}</h5>
+                <p class="card-text">
+                    <strong>ID:</strong> {item.item_uid}<br>
+                    <strong>Marke:</strong> {item.brand or '-'}<br>
+                    <strong>Bestand:</strong> {item.quantity}<br>
+                    <strong>Standort:</strong> {item.location or '-'}
+                </p>
+                <a href="{url_for('items.detail', id=item.id)}" class="btn btn-primary">
+                    <i class="bi bi-eye"></i> Details anzeigen
+                </a>
+            </div>
+        </div>
+        '''
+    else:
+        return f'<div class="alert alert-warning">Kein Artikel mit der ID <strong>{item_uid}</strong> gefunden.</div>'

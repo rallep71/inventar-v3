@@ -1,129 +1,58 @@
-<!-- app/templates/items/partials/items_grid.html -->
-{% if items %}
-    <!-- Items Grid -->
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mb-4">
+<!-- Items Grid (HTMX Partial) -->
+<div id="items-container">
+    {% if items %}
+    <div class="row g-3">
         {% for item in items %}
-        <div class="col">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
             <div class="card h-100 item-card">
                 <!-- Image -->
-                <div class="position-relative">
+                <div class="card-img-top text-center p-3 bg-light" style="height: 200px;">
                     {% if item.image_file %}
-                        <img src="{{ url_for('static', filename='uploads/' + item.image_file) }}" 
-                             class="card-img-top" 
-                             alt="{{ item.name }}"
-                             style="height: 200px; object-fit: cover;">
+                    <img src="{{ url_for('static', filename='uploads/' + item.image_file) }}" 
+                         alt="{{ item.name }}" 
+                         class="img-fluid"
+                         style="max-height: 180px; object-fit: contain;">
                     {% else %}
-                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
-                             style="height: 200px;">
-                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
-                        </div>
+                    <div class="d-flex align-items-center justify-content-center h-100">
+                        <i class="bi bi-image" style="font-size: 4rem; color: #ccc;"></i>
+                    </div>
                     {% endif %}
-                    
-                    <!-- Status Badge -->
-                    {% set badge_color, badge_text = item.status_badge %}
-                    <span class="position-absolute top-0 end-0 m-2 badge bg-{{ badge_color }}">
-                        {{ badge_text }}
-                    </span>
                 </div>
                 
+                <!-- Card Body -->
                 <div class="card-body">
-                    <!-- Title and UID -->
-                    <h5 class="card-title mb-1">
-                        <a href="{{ url_for('items.detail', id=item.id) }}" 
-                           class="text-decoration-none text-dark stretched-link">
-                            {{ item.name }}
-                        </a>
-                    </h5>
-                    <p class="text-muted small mb-2">{{ item.item_uid }}</p>
-                    
-                    <!-- Quick Info -->
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="badge bg-primary">
-                            <i class="bi bi-box"></i> {{ item.quantity }}
-                        </span>
-                        {% if item.price %}
-                        <span class="text-muted">{{ "%.2f"|format(item.price) }} €</span>
+                    <h5 class="card-title text-truncate">{{ item.name }}</h5>
+                    <p class="card-text">
+                        <span class="badge bg-primary">{{ item.item_uid }}</span>
+                        {% if item.brand %}
+                        <small class="text-muted d-block">{{ item.brand }}</small>
                         {% endif %}
-                    </div>
-                    
-                    <!-- Categories -->
-                    {% if item.categories %}
-                    <div class="mb-2">
-                        {% for category in item.categories[:2] %}
-                        <span class="badge bg-secondary">{{ category.name }}</span>
-                        {% endfor %}
-                        {% if item.categories|length > 2 %}
-                        <span class="badge bg-secondary">+{{ item.categories|length - 2 }}</span>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                    
-                    <!-- Location -->
-                    {% if item.room or item.location %}
-                    <p class="card-text small text-muted mb-0">
-                        <i class="bi bi-geo-alt"></i>
-                        {{ item.room if item.room else item.location }}
                     </p>
-                    {% endif %}
+                    
+                    <!-- Quantity Badge -->
+                    <div class="mb-2">
+                        <span class="badge bg-{{ 'danger' if item.quantity <= 0 else 'success' if item.quantity > 10 else 'warning' }}">
+                            {{ item.quantity }} Stück
+                        </span>
+                        {% if item.location %}
+                        <small class="text-muted ms-2">{{ item.location }}</small>
+                        {% endif %}
+                    </div>
                 </div>
                 
-                <!-- Quick Actions -->
+                <!-- Card Footer -->
                 <div class="card-footer bg-transparent">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <!-- Quantity Controls -->
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" 
-                                    class="btn btn-outline-secondary"
-                                    hx-post="{{ url_for('items.quick_update', id=item.id) }}"
-                                    hx-vals='{"action": "decrement"}'
-                                    hx-target="#quantity-{{ item.id }}"
-                                    hx-swap="outerHTML"
-                                    {% if item.quantity <= 0 %}disabled{% endif %}>
-                                <i class="bi bi-dash"></i>
-                            </button>
-                            <span id="quantity-{{ item.id }}" class="btn btn-outline-secondary disabled">
-                                {{ item.quantity }}
-                            </span>
-                            <button type="button" 
-                                    class="btn btn-outline-secondary"
-                                    hx-post="{{ url_for('items.quick_update', id=item.id) }}"
-                                    hx-vals='{"action": "increment"}'
-                                    hx-target="#quantity-{{ item.id }}"
-                                    hx-swap="outerHTML">
-                                <i class="bi bi-plus"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- More Actions -->
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
-                                    type="button" 
-                                    data-bs-toggle="dropdown">
-                                <i class="bi bi-three-dots"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('items.detail', id=item.id) }}">
-                                        <i class="bi bi-eye"></i> Details
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('items.edit', id=item.id) }}">
-                                        <i class="bi bi-pencil"></i> Bearbeiten
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <button class="dropdown-item text-danger"
-                                            hx-post="{{ url_for('items.delete', id=item.id) }}"
-                                            hx-confirm="Wirklich löschen?"
-                                            hx-target="closest .col"
-                                            hx-swap="outerHTML swap:1s">
-                                        <i class="bi bi-trash"></i> Löschen
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
+                    <div class="btn-group btn-group-sm w-100" role="group">
+                        <a href="{{ url_for('items.detail', id=item.id) }}" 
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-eye"></i> Details
+                        </a>
+                        {% if current_user.is_admin() or item.created_by == current_user.id %}
+                        <a href="{{ url_for('items.edit', id=item.id) }}" 
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -132,27 +61,27 @@
     </div>
     
     <!-- Pagination -->
-    {% if pagination.pages > 1 %}
-    <nav aria-label="Seitennummerierung">
+    {% if pagination and pagination.pages > 1 %}
+    <nav aria-label="Seitennummerierung" class="mt-4">
         <ul class="pagination justify-content-center">
             <!-- Previous -->
             <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                 <a class="page-link" 
-                   href="{{ url_for('items.index', page=pagination.prev_num, search=search, sort=sort, category=category_id, location=location, status=status) }}"
-                   hx-get="{{ url_for('items.index', page=pagination.prev_num, search=search, sort=sort, category=category_id, location=location, status=status) }}"
+                   {% if pagination.has_prev %}
+                   hx-get="{{ url_for('items.index', page=pagination.prev_num, search=search, category=category_id, location=location, status=status, sort=sort) }}"
                    hx-target="#items-container"
-                   hx-push-url="true">
+                   hx-push-url="true"
+                   {% endif %}>
                     <i class="bi bi-chevron-left"></i>
                 </a>
             </li>
             
-            <!-- Page Numbers -->
+            <!-- Page numbers -->
             {% for page_num in pagination.iter_pages(left_edge=1, left_current=1, right_current=2, right_edge=1) %}
                 {% if page_num %}
                     <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
                         <a class="page-link" 
-                           href="{{ url_for('items.index', page=page_num, search=search, sort=sort, category=category_id, location=location, status=status) }}"
-                           hx-get="{{ url_for('items.index', page=page_num, search=search, sort=sort, category=category_id, location=location, status=status) }}"
+                           hx-get="{{ url_for('items.index', page=page_num, search=search, category=category_id, location=location, status=status, sort=sort) }}"
                            hx-target="#items-container"
                            hx-push-url="true">
                             {{ page_num }}
@@ -168,10 +97,11 @@
             <!-- Next -->
             <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
                 <a class="page-link" 
-                   href="{{ url_for('items.index', page=pagination.next_num, search=search, sort=sort, category=category_id, location=location, status=status) }}"
-                   hx-get="{{ url_for('items.index', page=pagination.next_num, search=search, sort=sort, category=category_id, location=location, status=status) }}"
+                   {% if pagination.has_next %}
+                   hx-get="{{ url_for('items.index', page=pagination.next_num, search=search, category=category_id, location=location, status=status, sort=sort) }}"
                    hx-target="#items-container"
-                   hx-push-url="true">
+                   hx-push-url="true"
+                   {% endif %}>
                     <i class="bi bi-chevron-right"></i>
                 </a>
             </li>
@@ -179,20 +109,51 @@
     </nav>
     {% endif %}
     
-{% else %}
-    <!-- No Items -->
+    {% else %}
+    <!-- No items found -->
     <div class="text-center py-5">
-        <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+        <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
         <h3 class="mt-3">Keine Artikel gefunden</h3>
         <p class="text-muted">
             {% if search %}
                 Keine Artikel entsprechen Ihrer Suche.
             {% else %}
-                Noch keine Artikel vorhanden.
+                Es sind noch keine Artikel vorhanden.
             {% endif %}
         </p>
         <a href="{{ url_for('items.add') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Ersten Artikel erstellen
         </a>
     </div>
-{% endif %}
+    {% endif %}
+</div>
+
+<!-- Loading indicator -->
+<div id="loading-indicator" class="htmx-indicator text-center p-4">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Lade...</span>
+    </div>
+</div>
+
+<style>
+.item-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator {
+    display: block;
+}
+
+.htmx-request.htmx-indicator {
+    display: block;
+}
+</style>

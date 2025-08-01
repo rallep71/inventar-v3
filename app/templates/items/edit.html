@@ -1,0 +1,320 @@
+{% extends "layout/base.html" %}
+
+{% block title %}{{ item.name }} bearbeiten - Inventar{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-pencil-square"></i> Artikel bearbeiten
+                </h4>
+                <span class="badge bg-primary">{{ item.item_uid }}</span>
+            </div>
+            <div class="card-body">
+                <form method="POST" 
+                      enctype="multipart/form-data"
+                      hx-post="{{ url_for('items.edit', id=item.id) }}"
+                      hx-target="#form-errors"
+                      hx-swap="innerHTML">
+                    
+                    <!-- CSRF Token -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <!-- Error Messages -->
+                    <div id="form-errors">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <!-- Basic Information -->
+                    <fieldset class="mb-4">
+                        <legend class="h5 border-bottom pb-2">Grundinformationen</legend>
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="name" 
+                                       name="name" 
+                                       value="{{ item.name }}"
+                                       required>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="quantity" class="form-label">Menge <span class="text-danger">*</span></label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="quantity" 
+                                       name="quantity" 
+                                       value="{{ item.quantity }}"
+                                       min="0" 
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="brand" class="form-label">Marke</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="brand" 
+                                       name="brand"
+                                       value="{{ item.brand or '' }}"
+                                       list="brand-suggestions">
+                                <datalist id="brand-suggestions">
+                                    <option value="Dell">
+                                    <option value="HP">
+                                    <option value="Lenovo">
+                                    <option value="Apple">
+                                    <option value="Bosch">
+                                    <option value="Makita">
+                                </datalist>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="model" class="form-label">Modell</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="model" 
+                                       name="model"
+                                       value="{{ item.model or '' }}">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Categories -->
+                    <fieldset class="mb-4">
+                        <legend class="h5 border-bottom pb-2">Kategorien <span class="text-danger">*</span></legend>
+                        
+                        <div id="category-selector" class="mb-3">
+                            <div class="row g-2">
+                                {% for category in categories %}
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input category-checkbox" 
+                                               type="checkbox" 
+                                               name="category_ids" 
+                                               value="{{ category.id }}" 
+                                               id="cat-{{ category.id }}"
+                                               data-prefix="{{ category.prefix }}"
+                                               {% if category in item.categories %}checked{% endif %}>
+                                        <label class="form-check-label" for="cat-{{ category.id }}">
+                                            <i class="{{ category.icon or 'bi-tag' }}"></i>
+                                            {{ category.name }}
+                                            <small class="text-muted">({{ category.prefix }})</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Location & Storage -->
+                    <fieldset class="mb-4">
+                        <legend class="h5 border-bottom pb-2">Lagerort</legend>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="location" class="form-label">Standort</label>
+                                <select class="form-select" id="location" name="location">
+                                    <option value="">-- Wählen --</option>
+                                    <option value="Lager" {% if item.location == 'Lager' %}selected{% endif %}>Lager</option>
+                                    <option value="Büro" {% if item.location == 'Büro' %}selected{% endif %}>Büro</option>
+                                    <option value="Werkstatt" {% if item.location == 'Werkstatt' %}selected{% endif %}>Werkstatt</option>
+                                    <option value="Außenlager" {% if item.location == 'Außenlager' %}selected{% endif %}>Außenlager</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="room" class="form-label">Raum</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="room" 
+                                       name="room"
+                                       value="{{ item.room or '' }}">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="shelf" class="form-label">Regal/Fach</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="shelf" 
+                                       name="shelf"
+                                       value="{{ item.shelf or '' }}">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Prices -->
+                    <fieldset class="mb-4">
+                        <legend class="h5 border-bottom pb-2">Preise</legend>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="purchase_price" class="form-label">Einkaufspreis</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="purchase_price" 
+                                           name="purchase_price"
+                                           value="{{ item.purchase_price or 0 }}"
+                                           step="0.01"
+                                           min="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="sale_price" class="form-label">Verkaufspreis</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="sale_price" 
+                                           name="sale_price"
+                                           value="{{ item.sale_price or 0 }}"
+                                           step="0.01"
+                                           min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Details -->
+                    <fieldset class="mb-4">
+                        <legend class="h5 border-bottom pb-2">Details</legend>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Beschreibung</label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="3">{{ item.description or '' }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="serial_number" class="form-label">Seriennummer</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="serial_number" 
+                                   name="serial_number"
+                                   value="{{ item.serial_number or '' }}">
+                        </div>
+                        
+                        <!-- Current Image -->
+                        {% if item.image_file %}
+                        <div class="mb-3">
+                            <label class="form-label">Aktuelles Bild</label>
+                            <div class="current-image">
+                                <img src="{{ url_for('static', filename='uploads/' + item.image_file) }}" 
+                                     alt="{{ item.name }}" 
+                                     class="img-thumbnail"
+                                     style="max-width: 200px;">
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" name="remove_image" id="remove_image">
+                                    <label class="form-check-label" for="remove_image">
+                                        Bild entfernen
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Neues Bild hochladen</label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="image" 
+                                   name="image"
+                                   accept="image/*">
+                            <div class="form-text">Max. 10MB, JPG/PNG/WebP</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="available" {% if item.status == 'available' %}selected{% endif %}>Verfügbar</option>
+                                <option value="in_use" {% if item.status == 'in_use' %}selected{% endif %}>In Verwendung</option>
+                                <option value="maintenance" {% if item.status == 'maintenance' %}selected{% endif %}>Wartung</option>
+                                <option value="defective" {% if item.status == 'defective' %}selected{% endif %}>Defekt</option>
+                                <option value="disposed" {% if item.status == 'disposed' %}selected{% endif %}>Entsorgt</option>
+                            </select>
+                        </div>
+                    </fieldset>
+
+                    <!-- Metadata -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <div class="row text-muted small">
+                                <div class="col-md-6">
+                                    <i class="bi bi-calendar-plus"></i> 
+                                    Erstellt: {{ item.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                    {% if item.created_by_user %}
+                                    von {{ item.created_by_user.username }}
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <i class="bi bi-calendar-check"></i> 
+                                    Aktualisiert: {{ item.updated_at.strftime('%d.%m.%Y %H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2 justify-content-between">
+                        <div>
+                            <a href="{{ url_for('items.detail', id=item.id) }}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Zurück
+                            </a>
+                        </div>
+                        <div>
+                            <button type="button" 
+                                    class="btn btn-outline-danger"
+                                    hx-delete="{{ url_for('items.delete', id=item.id) }}"
+                                    hx-confirm="Wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!"
+                                    hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'>
+                                <i class="bi bi-trash"></i> Löschen
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Änderungen speichern
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Custom styles for better form UX */
+.category-checkbox:checked + label {
+    color: var(--bs-primary);
+    font-weight: 500;
+}
+
+fieldset legend {
+    color: var(--bs-primary);
+    font-weight: 500;
+}
+
+.current-image img {
+    border: 2px solid var(--bs-light);
+    border-radius: 0.375rem;
+}
+</style>
+{% endblock %}
