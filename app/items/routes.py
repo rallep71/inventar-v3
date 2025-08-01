@@ -1,9 +1,8 @@
-"""
-Items routes
-"""
-from app.items import items_bp
+from flask import render_template
+from flask_login import login_required
+from app.items import items
 
-
-@items_bp.route('/')
+@items.route("/")
+@login_required
 def index():
-    return "<h2>Items - Coming soon</h2>"
+    return "<h1>Items - Coming Soon</h1>"

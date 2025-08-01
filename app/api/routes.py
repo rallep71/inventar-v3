@@ -1,9 +1,6 @@
-"""
-API routes
-"""
-from app.api import api_bp
+from flask import jsonify
+from app.api import api
 
-
-@api_bp.route('/status')
+@api.route("/status")
 def status():
-    return {"status": "API v1 ready"}
+    return jsonify({"status": "ok"})

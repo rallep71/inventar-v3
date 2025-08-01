@@ -1,18 +1,36 @@
-{% extends "layout/base.html" %}
-
-{% block title %}Login - Inventar v3{% endblock %}
-
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">Login</h4>
-            </div>
-            <div class="card-body">
-                <p>Login kommt als nächstes...</p>
-            </div>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <style>
+        body { font-family: Arial; max-width: 400px; margin: 100px auto; padding: 20px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Login</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.username.label }}<br>
+            {{ form.username(style="width: 100%") }}
         </div>
-    </div>
-</div>
-{% endblock %}
+        <div>
+            {{ form.password.label }}<br>
+            {{ form.password(type="password", style="width: 100%") }}
+        </div>
+        <div>
+            {{ form.remember() }} {{ form.remember.label }}
+        </div>
+        <button type="submit">Login</button>
+    </form>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p style="color: red;">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</body>
+</html>
