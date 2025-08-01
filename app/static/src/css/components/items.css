@@ -1,0 +1,108 @@
+/* app/static/src/css/components/items.css */
+
+/* Item Card Styles */
+.item-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.item-card .stretched-link::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    content: "";
+}
+
+.item-card .dropdown,
+.item-card .btn-group {
+    position: relative;
+    z-index: 2;
+}
+
+/* Status Badges */
+.badge {
+    font-weight: 500;
+}
+
+/* Quantity Controls */
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+/* Search Bar */
+.search-highlight {
+    background-color: yellow;
+    font-weight: bold;
+}
+
+/* Filters */
+.filter-active {
+    border-color: var(--bs-primary);
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+/* Grid Responsiveness */
+@media (max-width: 576px) {
+    .row-cols-1 > * {
+        padding-right: 0.5rem;
+        padding-left: 0.5rem;
+    }
+}
+
+/* Loading State */
+.htmx-request .item-card {
+    opacity: 0.6;
+}
+
+/* Pagination */
+.pagination {
+    margin-bottom: 0;
+}
+
+/* No Items State */
+.bi-inbox {
+    opacity: 0.3;
+}
+
+/* Quick Actions Animations */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.quantity-updated {
+    animation: pulse 0.3s ease-in-out;
+}
+
+/* Dark Mode Adjustments */
+[data-theme="dark"] .item-card {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-gray-700);
+}
+
+[data-theme="dark"] .item-card:hover {
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .dropdown-menu {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-gray-700);
+}
+
+/* Image Placeholder */
+.card-img-top.bg-light {
+    background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+}
+
+[data-theme="dark"] .card-img-top.bg-light {
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+}

@@ -1,0 +1,14 @@
+<!-- app/templates/items/partials/quantity_badge.html -->
+<span id="quantity-{{ item.id }}" 
+      class="btn btn-outline-secondary disabled"
+      style="animation: pulse 0.3s ease-in-out;">
+    {{ item.quantity }}
+</span>
+
+<style>
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); background-color: var(--bs-success); color: white; }
+    100% { transform: scale(1); }
+}
+</style>

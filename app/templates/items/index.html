@@ -1,0 +1,153 @@
+<!-- app/templates/items/index.html -->
+{% extends "layout/base.html" %}
+
+{% block title %}Artikel - Inventar{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h2">
+            <i class="bi bi-box-seam"></i> Artikel
+            <span class="badge bg-secondary">{{ pagination.total }}</span>
+        </h1>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('items.add') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Neuer Artikel
+        </a>
+        <a href="{{ url_for('items.scan') }}" class="btn btn-outline-primary">
+            <i class="bi bi-qr-code-scan"></i> Scannen
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form hx-get="{{ url_for('items.index') }}" 
+              hx-target="#items-container" 
+              hx-push-url="true"
+              hx-indicator="#loading-indicator">
+            
+            <!-- Search Bar -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" 
+                               name="search" 
+                               class="form-control" 
+                               placeholder="Suche nach Name, ID, Marke..." 
+                               value="{{ search }}"
+                               hx-get="{{ url_for('items.index') }}"
+                               hx-trigger="keyup changed delay:500ms, search"
+                               hx-target="#items-container"
+                               hx-push-url="true">
+                        {% if search %}
+                        <a href="{{ url_for('items.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select name="sort" class="form-select" 
+                            hx-get="{{ url_for('items.index') }}"
+                            hx-trigger="change"
+                            hx-target="#items-container"
+                            hx-include="[name='search'], [name='category'], [name='location'], [name='status']">
+                        <option value="created_desc" {% if sort == 'created_desc' %}selected{% endif %}>Neueste zuerst</option>
+                        <option value="created_asc" {% if sort == 'created_asc' %}selected{% endif %}>Älteste zuerst</option>
+                        <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name A-Z</option>
+                        <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name Z-A</option>
+                        <option value="quantity_asc" {% if sort == 'quantity_asc' %}selected{% endif %}>Bestand ↑</option>
+                        <option value="quantity_desc" {% if sort == 'quantity_desc' %}selected{% endif %}>Bestand ↓</option>
+                        <option value="updated" {% if sort == 'updated' %}selected{% endif %}>Zuletzt geändert</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="per_page" class="form-select"
+                            hx-get="{{ url_for('items.index') }}"
+                            hx-trigger="change"
+                            hx-target="#items-container"
+                            hx-include="[name='search'], [name='category'], [name='location'], [name='status'], [name='sort']">
+                        <option value="12" {% if per_page == 12 %}selected{% endif %}>12 pro Seite</option>
+                        <option value="24" {% if per_page == 24 %}selected{% endif %}>24 pro Seite</option>
+                        <option value="48" {% if per_page == 48 %}selected{% endif %}>48 pro Seite</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Advanced Filters -->
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <select name="category" class="form-select"
+                            hx-get="{{ url_for('items.index') }}"
+                            hx-trigger="change"
+                            hx-target="#items-container"
+                            hx-include="[name='search'], [name='location'], [name='status'], [name='sort']">
+                        <option value="">Alle Kategorien</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if category_id == category.id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="location" class="form-select"
+                            hx-get="{{ url_for('items.index') }}"
+                            hx-trigger="change"
+                            hx-target="#items-container"
+                            hx-include="[name='search'], [name='category'], [name='status'], [name='sort']">
+                        <option value="">Alle Standorte</option>
+                        {% for loc in locations %}
+                            <option value="{{ loc }}" {% if location == loc %}selected{% endif %}>{{ loc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select"
+                            hx-get="{{ url_for('items.index') }}"
+                            hx-trigger="change"
+                            hx-target="#items-container"
+                            hx-include="[name='search'], [name='category'], [name='location'], [name='sort']">
+                        <option value="all" {% if status == 'all' %}selected{% endif %}>Alle Status</option>
+                        <option value="available" {% if status == 'available' %}selected{% endif %}>Verfügbar</option>
+                        <option value="low_stock" {% if status == 'low_stock' %}selected{% endif %}>Niedriger Bestand</option>
+                        <option value="out_of_stock" {% if status == 'out_of_stock' %}selected{% endif %}>Nicht verfügbar</option>
+                        <option value="borrowed" {% if status == 'borrowed' %}selected{% endif %}>Ausgeliehen</option>
+                        <option value="sold" {% if status == 'sold' %}selected{% endif %}>Verkauft</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    {% if search or category_id or location or status != 'all' %}
+                    <a href="{{ url_for('items.index') }}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Filter zurücksetzen
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loading-indicator" class="htmx-indicator text-center my-5">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Laden...</span>
+    </div>
+</div>
+
+<!-- Items Container -->
+<div id="items-container">
+    {% include 'items/partials/items_grid.html' %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Live search with debounce is handled by HTMX delay modifier
+// Additional JS for enhanced UX can be added here
+</script>
+{% endblock %}
