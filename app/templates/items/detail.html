@@ -12,7 +12,7 @@
         </ol>
     </nav>
 
-    <!-- Header mit Actionss -->
+    <!-- Header mit Actions -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
@@ -173,14 +173,27 @@
         <!-- Seitenleiste -->
         <div class="col-lg-4">
             <!-- Bild -->
-            {% if item.image_path %}
             <div class="card mb-4">
-                <img src="{{ url_for('static', filename='uploads/' + item.image_path) }}" 
-                     class="card-img-top" 
-                     alt="{{ item.name }}"
-                     style="max-height: 400px; object-fit: contain;">
+                <div class="card-body">
+                    <h5 class="card-title">Artikelbild</h5>
+                    {% if item.image_path %}
+                        <img src="{{ url_for('static', filename='uploads/' + item.image_path) }}" 
+                             class="img-fluid rounded" 
+                             alt="{{ item.name }}"
+                             style="width: 100%; max-height: 300px; object-fit: contain; cursor: pointer;"
+                             data-bs-toggle="modal" 
+                             data-bs-target="#imageModal">
+                        <small class="text-muted d-block mt-2 text-center">
+                            <i class="bi bi-zoom-in"></i> Klicken zum Vergrößern
+                        </small>
+                    {% else %}
+                        <div class="text-center py-5 bg-light rounded">
+                            <i class="bi bi-image display-1 text-muted"></i>
+                            <p class="text-muted mt-2">Kein Bild vorhanden</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            {% endif %}
 
             <!-- QR Code -->
             <div class="card mb-4">
@@ -226,6 +239,25 @@
     </div>
 </div>
 
+<!-- Modal für Bildvergrößerung -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ item.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                {% if item.image_file %}
+                <img src="/static/uploads/{{ item.image_file }}" 
+                     class="img-fluid" 
+                     alt="{{ item.name }}">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal für Schnellbearbeitung -->
 <div class="modal fade" id="quick-edit-modal" tabindex="-1">
     <div class="modal-dialog">
@@ -240,6 +272,14 @@
 @media print {
     .btn-group, .navbar, .breadcrumb { display: none !important; }
     .card { border: 1px solid #ddd !important; }
+}
+
+/* Bild Hover-Effekt */
+.img-hover {
+    transition: transform 0.2s ease;
+}
+.img-hover:hover {
+    transform: scale(1.05);
 }
 </style>
 
