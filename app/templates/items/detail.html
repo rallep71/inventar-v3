@@ -176,8 +176,8 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <h5 class="card-title">Artikelbild</h5>
-                    {% if item.image_path %}
-                        <img src="{{ url_for('static', filename='uploads/' + item.image_path) }}" 
+                    {% if item.image_file %}
+                        <img src="{{ url_for('static', filename='uploads/' + item.image_file) }}" 
                              class="img-fluid rounded" 
                              alt="{{ item.name }}"
                              style="width: 100%; max-height: 300px; object-fit: contain; cursor: pointer;"
