@@ -3,84 +3,307 @@
 {% block title %}{{ item.name }} - Details{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <h1>{{ item.name }}</h1>
-        <p class="text-muted">{{ item.item_uid }}</p>
-        
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Details</h5>
-                <dl class="row">
-                    <dt class="col-sm-3">Menge:</dt>
-                    <dd class="col-sm-9">{{ item.quantity }}</dd>
-                    
-                    {% if item.brand %}
-                    <dt class="col-sm-3">Marke:</dt>
-                    <dd class="col-sm-9">{{ item.brand }}</dd>
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('items.index') }}">Artikel</a></li>
+            <li class="breadcrumb-item active">{{ item.item_uid }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header mit Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <h1 class="h2 mb-2">{{ item.name }}</h1>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-tag"></i> {{ item.item_uid }}
+                        {% if item.brand %}
+                        <span class="ms-3"><i class="bi bi-building"></i> {{ item.brand }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="btn-group" role="group">
+                    {% if current_user.is_admin() or item.created_by == current_user.id %}
+                    <a href="{{ url_for('items.edit', id=item.id) }}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Bearbeiten
+                    </a>
                     {% endif %}
                     
-                    {% if item.location %}
-                    <dt class="col-sm-3">Standort:</dt>
-                    <dd class="col-sm-9">{{ item.location }}</dd>
-                    {% endif %}
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-printer"></i> Drucken
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="printQRCode()">
+                                <i class="bi bi-qr-code"></i> QR-Code Label
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="printDatasheet()">
+                                <i class="bi bi-file-text"></i> Datenblatt
+                            </a></li>
+                            <li><a class="dropdown-item" href="#">
+                                <i class="bi bi-card-text"></i> Verkaufsflyer
+                            </a></li>
+                        </ul>
+                    </div>
                     
-                    <dt class="col-sm-3">Zustand:</dt>
-                    <dd class="col-sm-9">{{ item.condition or 'Gut' }}</dd>
-                    
-                    {% if item.notes %}
-                    <dt class="col-sm-3">Notizen:</dt>
-                    <dd class="col-sm-9">{{ item.notes }}</dd>
+                    {% if current_user.is_admin() or item.created_by == current_user.id %}
+                    <button type="button" class="btn btn-danger" 
+                            hx-delete="{{ url_for('items.delete', id=item.id) }}"
+                            hx-confirm="Wirklich löschen?"
+                            hx-target="body">
+                        <i class="bi bi-trash"></i> Löschen
+                    </button>
                     {% endif %}
-                </dl>
+                </div>
             </div>
         </div>
-        
-        <div class="btn-group">
-            {% if current_user.is_admin() or item.created_by == current_user.id %}
-            <a href="{{ url_for('items.edit', id=item.id) }}" class="btn btn-primary">
-                <i class="bi bi-pencil"></i> Bearbeiten
-            </a>
-            <button type="button" class="btn btn-danger" onclick="deleteItem({{ item.id }})">
-                <i class="bi bi-trash"></i> Löschen
-            </button>
-            {% endif %}
-            <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Zurück
-            </a>
-        </div>
     </div>
-    
-    <div class="col-md-4">
-        {% if item.image_file %}
-        <img src="{{ url_for('static', filename='uploads/' + item.image_file) }}" 
-             class="img-fluid rounded shadow" alt="{{ item.name }}"
-             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIHg9IjIwMCIgeT0iMTUwIiBzdHlsZT0iZmlsbDojYWFhO2ZvbnQtd2VpZ2h0OmJvbGQ7Zm9udC1zaXplOjE2cHg7Zm9udC1mYW1pbHk6QXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWY7ZG9taW5hbnQtYmFzZWxpbmU6Y2VudHJhbCI+QmlsZCBuaWNodCBnZWZ1bmRlbjwvdGV4dD48L3N2Zz4=';">
-        {% else %}
-        <div class="bg-light p-5 text-center rounded">
-            <i class="bi bi-image" style="font-size: 3rem;"></i>
-            <p>Kein Bild vorhanden</p>
+
+    <div class="row">
+        <!-- Hauptinformationen -->
+        <div class="col-lg-8">
+            <!-- Status & Menge -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="card-title mb-3">Status & Verfügbarkeit</h5>
+                            
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="me-3">Status:</span>
+                                {% if item.status == 'available' %}
+                                    <span class="badge bg-success">Verfügbar</span>
+                                {% elif item.status == 'reserved' %}
+                                    <span class="badge bg-warning">Reserviert</span>
+                                {% elif item.status == 'sold' %}
+                                    <span class="badge bg-danger">Verkauft</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ item.status }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-flex align-items-center">
+                                <span class="me-3">Menge:</span>
+                                <span class="h4 mb-0 
+                                    {% if item.quantity <= 0 %}text-danger
+                                    {% elif item.quantity <= 5 %}text-warning
+                                    {% else %}text-success{% endif %}">
+                                    {{ item.quantity }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="card-title mb-3">Zusatzinformationen</h5>
+                            {% if item.location %}
+                            <p class="mb-2">
+                                <strong>Standort:</strong> 
+                                <span class="text-primary">{{ item.location }}</span>
+                            </p>
+                            {% endif %}
+                            <p class="mb-0">
+                                <strong>Team:</strong> 
+                                <span class="text-info">{{ item.team.name if item.team else 'Kein Team' }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Artikeldetails</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% if item.brand %}
+                            <p><strong>Marke:</strong> {{ item.brand }}</p>
+                            {% endif %}
+                            
+                            {% if item.description %}
+                            <p><strong>Beschreibung:</strong></p>
+                            <p>{{ item.description|safe }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {% if item.categories %}
+                            <p><strong>Kategorien:</strong>
+                                {% for category in item.categories %}
+                                    <span class="badge bg-secondary">{{ category.name }}</span>
+                                {% endfor %}
+                            </p>
+                            {% endif %}
+                            
+                            {% if creator %}
+                            <p><strong>Erstellt von:</strong> {{ creator.username }}</p>
+                            {% endif %}
+                            
+                            <p><strong>Erstellt am:</strong> {{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Standort -->
+            {% if item.location %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Standort</h5>
+                    <p class="mb-0"><i class="bi bi-geo-alt"></i> {{ item.location }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historie -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Verlauf</h5>
+                    <p class="text-muted">Historie-Funktion kommt bald...</p>
+                </div>
+            </div>
         </div>
-        {% endif %}
+
+        <!-- Seitenleiste -->
+        <div class="col-lg-4">
+            <!-- Bild -->
+            {% if item.image_path %}
+            <div class="card mb-4">
+                <img src="{{ url_for('static', filename='uploads/' + item.image_path) }}" 
+                     class="card-img-top" 
+                     alt="{{ item.name }}"
+                     style="max-height: 400px; object-fit: contain;">
+            </div>
+            {% endif %}
+
+            <!-- QR Code -->
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">QR-Code</h5>
+                    <div id="qrcode" class="mb-3">
+                        <!-- QR Code wird hier generiert -->
+                        <canvas id="qr-canvas"></canvas>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="downloadQRCode()">
+                        <i class="bi bi-download"></i> QR-Code herunterladen
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Schnellaktionen</h5>
+                    
+                    <div class="d-grid gap-2">
+                        <!-- Temporär deaktiviert bis Routes implementiert sind
+                        <button class="btn btn-outline-primary" disabled>
+                            <i class="bi bi-pencil-square"></i> Schnellbearbeitung
+                        </button>
+                        
+                        <button class="btn btn-outline-success" disabled>
+                            <i class="bi bi-files"></i> Duplizieren
+                        </button>
+                        -->
+                        
+                        <a href="{{ url_for('items.edit', id=item.id) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Bearbeiten
+                        </a>
+                        
+                        <button class="btn btn-outline-info" disabled>
+                            <i class="bi bi-arrow-repeat"></i> Bestandskorrektur (coming soon)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
+<!-- Modal für Schnellbearbeitung -->
+<div class="modal fade" id="quick-edit-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Inhalt wird via HTMX geladen -->
+        </div>
+    </div>
+</div>
+
+<!-- Print Styles -->
+<style>
+@media print {
+    .btn-group, .navbar, .breadcrumb { display: none !important; }
+    .card { border: 1px solid #ddd !important; }
+}
+</style>
+
+<!-- QR Code Script -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <script>
-function deleteItem(id) {
-    if (confirm('Wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!')) {
-        fetch(`/items/${id}/delete`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token() }}'
-            }
-        }).then(response => {
-            if (response.ok) {
-                window.location.href = '/items/';
-            } else {
-                alert('Fehler beim Löschen!');
-            }
-        });
-    }
+// QR Code generieren
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('qr-canvas');
+    const itemUrl = window.location.origin + '/items/{{ item.id }}';
+    
+    QRCode.toCanvas(canvas, itemUrl, {
+        width: 200,
+        margin: 2,
+        color: {
+            dark: '#000000',
+            light: '#ffffff'
+        }
+    });
+});
+
+// QR Code Download
+function downloadQRCode() {
+    const canvas = document.getElementById('qr-canvas');
+    const link = document.createElement('a');
+    link.download = 'qr-{{ item.item_uid }}.png';
+    link.href = canvas.toDataURL();
+    link.click();
+}
+
+// Druckfunktionen
+function printQRCode() {
+    const printWindow = window.open('', '_blank');
+    const canvas = document.getElementById('qr-canvas');
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>QR-Code: {{ item.item_uid }}</title>
+            <style>
+                body { text-align: center; font-family: Arial; }
+                .label { margin: 20px; }
+                h2 { margin: 10px 0; }
+            </style>
+        </head>
+        <body>
+            <div class="label">
+                <h2>{{ item.name }}</h2>
+                <img src="${canvas.toDataURL()}" />
+                <p>{{ item.item_uid }}</p>
+            </div>
+            <script>
+                window.print(); 
+                setTimeout(function() { window.close(); }, 500);
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
+function printDatasheet() {
+    window.print();
 }
 </script>
 {% endblock %}

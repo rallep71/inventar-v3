@@ -26,3 +26,15 @@ class Log(db.Model):
     
     def __repr__(self):
         return f'<Log {self.action} by User {self.user_id}>'
+@property
+def action_display(self):
+    """Zeigt lesbare Action-Beschreibung"""
+    actions = {
+        'created': 'hat erstellt',
+        'updated': 'hat aktualisiert',
+        'deleted': 'hat gelöscht',
+        'view': 'hat angesehen',
+        'quantity_change': 'hat Menge geändert',
+        'status_change': 'hat Status geändert'
+    }
+    return actions.get(self.action, self.action)

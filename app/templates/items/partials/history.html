@@ -1,0 +1,43 @@
+<!-- app/templates/items/partials/history.html -->
+{% if logs %}
+    <div class="timeline">
+        {% for log in logs %}
+        <div class="timeline-item mb-3">
+            <div class="d-flex align-items-start">
+                <div class="timeline-icon me-3">
+                    {% if log.action == 'created' %}
+                        <i class="bi bi-plus-circle text-success"></i>
+                    {% elif log.action == 'updated' %}
+                        <i class="bi bi-pencil-circle text-primary"></i>
+                    {% elif log.action == 'deleted' %}
+                        <i class="bi bi-trash-circle text-danger"></i>
+                    {% elif log.action == 'quantity_change' %}
+                        <i class="bi bi-box-arrow-in-down text-warning"></i>
+                    {% elif log.action == 'status_change' %}
+                        <i class="bi bi-toggle-on text-info"></i>
+                    {% else %}
+                        <i class="bi bi-circle text-secondary"></i>
+                    {% endif %}
+                </div>
+                
+                <div class="timeline-content flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>{{ log.user.username }}</strong>
+                            <span class="text-muted">{{ log.action }}</span>
+                            {% if log.details %}
+                                <p class="mb-0 text-muted small">{{ log.details }}</p>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">
+                            {{ log.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted text-center">Noch keine Historie vorhanden.</p>
+{% endif %}

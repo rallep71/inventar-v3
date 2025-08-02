@@ -1,17 +1,19 @@
 # app/items/routes.py - Add these routes to your existing routes.py
 
-from flask import render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask import render_template, request, redirect, url_for, flash, jsonify, current_app, abort
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
+from sqlalchemy import or_  # Neu hinzufügen!
 import os
 from datetime import datetime
 from app import db
 from app.items import items
-from app.models import Item, Category, Log, User
-from app.models import Item, Category, Log, User
+from app.models import Item, Category, Log, User  # Nur einmal
 from app.config import Config
 
 # Add these helper functions at the top
+
+# Helper functions
 
 # Helper functions
 def allowed_file(filename):
@@ -521,3 +523,76 @@ def search_by_id():
         '''
     else:
         return f'<div class="alert alert-warning">Kein Artikel mit der ID <strong>{item_uid}</strong> gefunden.</div>'
+
+# Füge diese Route zu app/items/routes.py hinzu:
+
+@items.route("/<int:id>/history")
+@login_required
+def history(id):
+    """Get item history for HTMX request"""
+    item = Item.query.get_or_404(id)
+    
+    # Check permissions
+    if not current_user.is_admin() and item.team_id != current_user.team_id:
+        abort(403)
+    
+    logs = Log.query.filter_by(item_id=id)\
+                    .order_by(Log.timestamp.desc())\
+                    .limit(20).all()
+    
+    # Return partial template
+    return render_template('items/partials/history.html', logs=logs)
+
+@items.route("/<int:id>/duplicate", methods=['POST'])
+@login_required
+def duplicate(id):
+    """Duplicate an item"""
+    item = Item.query.get_or_404(id)
+    
+    # Check permissions
+    if not current_user.is_admin() and item.team_id != current_user.team_id:
+        abort(403)
+    
+    # Create duplicate
+    new_item = Item(
+        item_uid=generate_item_id(item.categories[0].prefix if item.categories else 'MISC'),
+        name=f"{item.name} (Kopie)",
+        description=item.description,
+        quantity=item.quantity,
+        location=item.location,
+        status='available',
+        brand=item.brand,
+        created_by=current_user.id,
+        team_id=current_user.team_id
+    )
+    
+    # Copy categories
+    for category in item.categories:
+        new_item.categories.append(category)
+    
+    db.session.add(new_item)
+    
+    # Log action
+    log = Log(
+        user_id=current_user.id,
+        item_id=new_item.id,
+        action='created',
+        details=f'Dupliziert von {item.item_uid}'
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    flash(f'Artikel {new_item.item_uid} wurde erstellt', 'success')
+    return redirect(url_for('items.detail', id=new_item.id))
+
+@items.route("/<int:id>/quick-edit")
+@login_required
+def quick_edit(id):
+    """Show quick edit form for HTMX"""
+    item = Item.query.get_or_404(id)
+    
+    # Check permissions
+    if not current_user.is_admin() and item.team_id != current_user.team_id:
+        abort(403)
+    
+    return render_template('items/partials/quick_edit.html', item=item)
