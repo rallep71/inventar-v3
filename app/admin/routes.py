@@ -8,6 +8,20 @@ from app import db
 from app.admin import admin
 from app.models import Category, Item, User
 
+@admin.route('/')
+@admin_required
+def index():
+    """Admin Dashboard"""
+    # Hole Statistiken
+    stats = {
+        'total_items': Item.query.count(),
+        'total_categories': Category.query.count(),
+        'total_users': User.query.count(),
+        'total_teams': 0  # Placeholder bis Team Model implementiert ist
+    }
+    
+    return render_template('admin/index.html', stats=stats)
+
 # Admin-Decorator
 def admin_required(f):
     @wraps(f)
