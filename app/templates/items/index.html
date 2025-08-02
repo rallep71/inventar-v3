@@ -1,153 +1,262 @@
-<!-- app/templates/items/index.html -->
 {% extends "layout/base.html" %}
 
-{% block title %}Artikel - Inventar{% endblock %}
+{% block title %}Artikel - Inventar v3{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <h1 class="h2">
-            <i class="bi bi-box-seam"></i> Artikel
-            <span class="badge bg-secondary">{{ pagination.total }}</span>
-        </h1>
+        <h1>Artikel</h1>
     </div>
     <div class="col-auto">
-        <a href="{{ url_for('items.add') }}" class="btn btn-primary">
+        <a href="{{ url_for('items.add') }}" class="btn btn-success">
             <i class="bi bi-plus-circle"></i> Neuer Artikel
         </a>
-        <a href="{{ url_for('items.scan') }}" class="btn btn-outline-primary">
-            <i class="bi bi-qr-code-scan"></i> Scannen
+        <a href="{{ url_for('items.scan') }}" class="btn btn-info">
+            <i class="bi bi-qr-code-scan"></i> QR-Scanner
         </a>
     </div>
 </div>
 
-<!-- Search and Filters -->
+<!-- Such- und Filterleiste -->
 <div class="card mb-4">
     <div class="card-body">
-        <form hx-get="{{ url_for('items.index') }}" 
-              hx-target="#items-container" 
-              hx-push-url="true"
-              hx-indicator="#loading-indicator">
-            
-            <!-- Search Bar -->
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" 
-                               name="search" 
-                               class="form-control" 
-                               placeholder="Suche nach Name, ID, Marke..." 
-                               value="{{ search }}"
-                               hx-get="{{ url_for('items.index') }}"
-                               hx-trigger="keyup changed delay:500ms, search"
-                               hx-target="#items-container"
-                               hx-push-url="true">
-                        {% if search %}
-                        <a href="{{ url_for('items.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-x"></i>
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <select name="sort" class="form-select" 
-                            hx-get="{{ url_for('items.index') }}"
-                            hx-trigger="change"
-                            hx-target="#items-container"
-                            hx-include="[name='search'], [name='category'], [name='location'], [name='status']">
-                        <option value="created_desc" {% if sort == 'created_desc' %}selected{% endif %}>Neueste zuerst</option>
-                        <option value="created_asc" {% if sort == 'created_asc' %}selected{% endif %}>Älteste zuerst</option>
-                        <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name A-Z</option>
-                        <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name Z-A</option>
-                        <option value="quantity_asc" {% if sort == 'quantity_asc' %}selected{% endif %}>Bestand ↑</option>
-                        <option value="quantity_desc" {% if sort == 'quantity_desc' %}selected{% endif %}>Bestand ↓</option>
-                        <option value="updated" {% if sort == 'updated' %}selected{% endif %}>Zuletzt geändert</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="per_page" class="form-select"
-                            hx-get="{{ url_for('items.index') }}"
-                            hx-trigger="change"
-                            hx-target="#items-container"
-                            hx-include="[name='search'], [name='category'], [name='location'], [name='status'], [name='sort']">
-                        <option value="12" {% if per_page == 12 %}selected{% endif %}>12 pro Seite</option>
-                        <option value="24" {% if per_page == 24 %}selected{% endif %}>24 pro Seite</option>
-                        <option value="48" {% if per_page == 48 %}selected{% endif %}>48 pro Seite</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Advanced Filters -->
+        <form method="GET" action="{{ url_for('items.index') }}">
             <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search" 
+                           placeholder="Suche nach Name, ID, Marke..." 
+                           value="{{ request.args.get('search', '') }}">
+                </div>
                 <div class="col-md-3">
-                    <select name="category" class="form-select"
-                            hx-get="{{ url_for('items.index') }}"
-                            hx-trigger="change"
-                            hx-target="#items-container"
-                            hx-include="[name='search'], [name='location'], [name='status'], [name='sort']">
+                    <select class="form-select" name="category">
                         <option value="">Alle Kategorien</option>
-                        {% for category in categories %}
-                            <option value="{{ category.id }}" {% if category_id == category.id %}selected{% endif %}>
-                                {{ category.name }}
+                        {% if categories %}
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" 
+                                {% if request.args.get('category', type=int) == cat.id %}selected{% endif %}>
+                                {{ cat.name }}
                             </option>
-                        {% endfor %}
+                            {% endfor %}
+                        {% endif %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select name="location" class="form-select"
-                            hx-get="{{ url_for('items.index') }}"
-                            hx-trigger="change"
-                            hx-target="#items-container"
-                            hx-include="[name='search'], [name='category'], [name='status'], [name='sort']">
+                <div class="col-md-2">
+                    <select class="form-select" name="location">
                         <option value="">Alle Standorte</option>
-                        {% for loc in locations %}
-                            <option value="{{ loc }}" {% if location == loc %}selected{% endif %}>{{ loc }}</option>
-                        {% endfor %}
+                        {% if locations %}
+                            {% for loc in locations %}
+                            <option value="{{ loc }}" {% if request.args.get('location') == loc %}selected{% endif %}>
+                                {{ loc }}
+                            </option>
+                            {% endfor %}
+                        {% endif %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select name="status" class="form-select"
-                            hx-get="{{ url_for('items.index') }}"
-                            hx-trigger="change"
-                            hx-target="#items-container"
-                            hx-include="[name='search'], [name='category'], [name='location'], [name='sort']">
-                        <option value="all" {% if status == 'all' %}selected{% endif %}>Alle Status</option>
-                        <option value="available" {% if status == 'available' %}selected{% endif %}>Verfügbar</option>
-                        <option value="low_stock" {% if status == 'low_stock' %}selected{% endif %}>Niedriger Bestand</option>
-                        <option value="out_of_stock" {% if status == 'out_of_stock' %}selected{% endif %}>Nicht verfügbar</option>
-                        <option value="borrowed" {% if status == 'borrowed' %}selected{% endif %}>Ausgeliehen</option>
-                        <option value="sold" {% if status == 'sold' %}selected{% endif %}>Verkauft</option>
+                <div class="col-md-2">
+                    <select class="form-select" name="sort">
+                        <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Neueste zuerst</option>
+                        <option value="oldest" {% if request.args.get('sort') == 'oldest' %}selected{% endif %}>Älteste zuerst</option>
+                        <option value="name_asc" {% if request.args.get('sort') == 'name_asc' %}selected{% endif %}>Name A-Z</option>
+                        <option value="name_desc" {% if request.args.get('sort') == 'name_desc' %}selected{% endif %}>Name Z-A</option>
+                        <option value="quantity_asc" {% if request.args.get('sort') == 'quantity_asc' %}selected{% endif %}>Menge ↑</option>
+                        <option value="quantity_desc" {% if request.args.get('sort') == 'quantity_desc' %}selected{% endif %}>Menge ↓</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    {% if search or category_id or location or status != 'all' %}
-                    <a href="{{ url_for('items.index') }}" class="btn btn-outline-secondary w-100">
-                        <i class="bi bi-x-circle"></i> Filter zurücksetzen
-                    </a>
-                    {% endif %}
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Loading Indicator -->
-<div id="loading-indicator" class="htmx-indicator text-center my-5">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Laden...</span>
+<!-- Statistik-Leiste -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{ items|length if items else 0 }}</h5>
+                <p class="card-text text-muted">Artikel angezeigt</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{ total_items|default(items|length) }}</h5>
+                <p class="card-text text-muted">Gesamt</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{ categories|length if categories else 0 }}</h5>
+                <p class="card-text text-muted">Kategorien</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{ low_stock|default(0) }}</h5>
+                <p class="card-text text-muted">Niedriger Bestand</p>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Items Container -->
-<div id="items-container">
-    {% include 'items/partials/items_grid.html' %}
+<!-- Artikel Grid -->
+<div class="row g-4" id="items-grid">
+    {% for item in items %}
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+        <div class="card h-100 item-card">
+            <!-- Bild -->
+            {% if item.image_file %}
+            <img src="{{ url_for('static', filename='uploads/' + item.image_file) }}" 
+                 class="card-img-top" alt="{{ item.name }}" 
+                 style="height: 200px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                 style="height: 200px;">
+                <i class="bi bi-image text-secondary" style="font-size: 3rem;"></i>
+            </div>
+            {% endif %}
+            
+            <!-- Status Badge -->
+            {% if item.quantity == 0 %}
+            <span class="position-absolute top-0 end-0 m-2 badge bg-danger">Nicht verfügbar</span>
+            {% elif item.quantity <= 5 %}
+            <span class="position-absolute top-0 end-0 m-2 badge bg-warning">Wenig Bestand</span>
+            {% endif %}
+            
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">{{ item.item_uid }}</h6>
+                <h5 class="card-title">{{ item.name }}</h5>
+                
+                <div class="small text-muted">
+                    {% if item.brand %}
+                        <div><i class="bi bi-tag"></i> {{ item.brand }}</div>
+                    {% endif %}
+                    {% if item.location %}
+                        <div><i class="bi bi-geo-alt"></i> {{ item.location }}</div>
+                    {% endif %}
+                    {% if item.categories %}
+                        <div><i class="bi bi-folder"></i> 
+                            {% for cat in item.categories[:2] %}
+                                {{ cat.name }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                            {% if item.categories|length > 2 %}...{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-3">
+                    <span class="badge bg-{{ 'danger' if item.quantity == 0 else 'success' if item.quantity > 10 else 'warning' }}">
+                        {{ item.quantity }} Stück
+                    </span>
+                    {% if item.price %}
+                        <span class="badge bg-secondary">{{ "%.2f"|format(item.price) }} €</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-footer bg-transparent">
+                <div class="btn-group btn-group-sm w-100">
+                    <a href="{{ url_for('items.detail', id=item.id) }}" 
+                       class="btn btn-outline-primary" title="Details">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    {% if current_user.is_admin() or item.created_by == current_user.id %}
+                    <a href="{{ url_for('items.edit', id=item.id) }}" 
+                       class="btn btn-outline-secondary" title="Bearbeiten">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <button type="button" class="btn btn-outline-success" 
+                            onclick="showQRCode('{{ item.item_uid }}')" title="QR-Code">
+                        <i class="bi bi-qr-code"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 </div>
-{% endblock %}
 
-{% block scripts %}
+{% if not items %}
+<div class="alert alert-info mt-4 text-center">
+    <i class="bi bi-info-circle"></i> 
+    {% if request.args.get('search') %}
+        Keine Artikel für Ihre Suche gefunden.
+    {% else %}
+        Keine Artikel vorhanden.
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% if pagination and pagination.pages > 1 %}
+<nav aria-label="Seitennummerierung" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <!-- Previous -->
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" 
+               href="{{ url_for('items.index', page=pagination.prev_num, search=request.args.get('search'), category=request.args.get('category'), location=request.args.get('location'), sort=request.args.get('sort')) }}">
+                <i class="bi bi-chevron-left"></i> Zurück
+            </a>
+        </li>
+        
+        <!-- Page numbers -->
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                    <a class="page-link" 
+                       href="{{ url_for('items.index', page=page_num, search=request.args.get('search'), category=request.args.get('category'), location=request.args.get('location'), sort=request.args.get('sort')) }}">
+                        {{ page_num }}
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        
+        <!-- Next -->
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" 
+               href="{{ url_for('items.index', page=pagination.next_num, search=request.args.get('search'), category=request.args.get('category'), location=request.args.get('location'), sort=request.args.get('sort')) }}">
+                Weiter <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+<!-- QR Code Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">QR-Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center" id="qrModalBody">
+                <!-- QR Code wird hier eingefügt -->
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-// Live search with debounce is handled by HTMX delay modifier
-// Additional JS for enhanced UX can be added here
+function showQRCode(itemUid) {
+    // Simple QR display - you can enhance this
+    const qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+    document.getElementById('qrModalBody').innerHTML = 
+        `<p>QR-Code für: ${itemUid}</p>
+         <img src="/items/${itemUid}/qrcode" class="img-fluid">`;
+    qrModal.show();
+}
 </script>
 {% endblock %}

@@ -1,0 +1,88 @@
+{% extends "layout/base.html" %}
+
+{% block title %}{{ item.name }} bearbeiten{% endblock %}
+
+{% block content %}
+<h1>Artikel bearbeiten</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="mb-3">
+                <label class="form-label">Item ID</label>
+                <input type="text" class="form-control" value="{{ item.item_uid }}" readonly>
+            </div>
+            
+            <div class="mb-3">
+                <label for="name" class="form-label">Name *</label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ item.name }}" required>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Menge *</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" 
+                               value="{{ item.quantity }}" min="0" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="category_ids" class="form-label">Kategorie *</label>
+                        <select class="form-select" id="category_ids" name="category_ids" required>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" 
+                                {% if category in item.categories %}selected{% endif %}>
+                                {{ category.name }} ({{ category.prefix }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="brand" class="form-label">Marke</label>
+                        <input type="text" class="form-control" id="brand" name="brand" 
+                               value="{{ item.brand or '' }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Standort</label>
+                        <input type="text" class="form-control" id="location" name="location" 
+                               value="{{ item.location or '' }}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notizen</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3">{{ item.notes or '' }}</textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="image" class="form-label">Neues Bild</label>
+                <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                {% if item.image_file %}
+                <small class="text-muted">Aktuelles Bild: {{ item.image_file }}</small>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Speichern</button>
+            <a href="{{ url_for('items.detail', id=item.id) }}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+        
+        <div class="col-md-4">
+            {% if item.image_file %}
+            <img src="{{ url_for('static', filename='uploads/' + item.image_file) }}" 
+                 class="img-fluid rounded" alt="{{ item.name }}">
+            {% endif %}
+        </div>
+    </div>
+</form>
+{% endblock %}

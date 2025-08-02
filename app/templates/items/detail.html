@@ -1,58 +1,86 @@
-# Add these routes to your app/items/routes.py file
+{% extends "layout/base.html" %}
 
-@items.route("/search/<item_uid>")
-@login_required
-def search_by_uid(item_uid):
-    """Search and redirect to item by UID"""
-    item = Item.query.filter_by(item_uid=item_uid).first()
-    
-    if item:
-        # Check access rights
-        if not current_user.is_admin():
-            team_ids = [team.id for team in current_user.teams]
-            if item.team_id and item.team_id not in team_ids:
-                flash('Sie haben keine Berechtigung, diesen Artikel anzuzeigen.', 'error')
-                return redirect(url_for('items.index'))
-        
-        return redirect(url_for('items.detail', id=item.id))
-    else:
-        flash(f'Artikel mit ID {item_uid} nicht gefunden.', 'warning')
-        return redirect(url_for('items.scan'))
+{% block title %}{{ item.name }} - Details{% endblock %}
 
-@items.route("/search_by_id")
-@login_required
-def search_by_id():
-    """AJAX search by item ID (for manual input)"""
-    item_uid = request.args.get('item_uid', '').strip().upper()
-    
-    if not item_uid:
-        return '<div class="alert alert-warning">Bitte geben Sie eine Artikel-ID ein.</div>'
-    
-    item = Item.query.filter_by(item_uid=item_uid).first()
-    
-    if item:
-        # Check access rights
-        if not current_user.is_admin():
-            team_ids = [team.id for team in current_user.teams]
-            if item.team_id and item.team_id not in team_ids:
-                return '<div class="alert alert-danger">Keine Berechtigung für diesen Artikel.</div>'
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>{{ item.name }}</h1>
+        <p class="text-muted">{{ item.item_uid }}</p>
         
-        # Return item card
-        return f'''
-        <div class="card mt-3">
+        <div class="card mb-4">
             <div class="card-body">
-                <h5 class="card-title">{item.name}</h5>
-                <p class="card-text">
-                    <strong>ID:</strong> {item.item_uid}<br>
-                    <strong>Marke:</strong> {item.brand or '-'}<br>
-                    <strong>Bestand:</strong> {item.quantity}<br>
-                    <strong>Standort:</strong> {item.location or '-'}
-                </p>
-                <a href="{url_for('items.detail', id=item.id)}" class="btn btn-primary">
-                    <i class="bi bi-eye"></i> Details anzeigen
-                </a>
+                <h5 class="card-title">Details</h5>
+                <dl class="row">
+                    <dt class="col-sm-3">Menge:</dt>
+                    <dd class="col-sm-9">{{ item.quantity }}</dd>
+                    
+                    {% if item.brand %}
+                    <dt class="col-sm-3">Marke:</dt>
+                    <dd class="col-sm-9">{{ item.brand }}</dd>
+                    {% endif %}
+                    
+                    {% if item.location %}
+                    <dt class="col-sm-3">Standort:</dt>
+                    <dd class="col-sm-9">{{ item.location }}</dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-3">Zustand:</dt>
+                    <dd class="col-sm-9">{{ item.condition or 'Gut' }}</dd>
+                    
+                    {% if item.notes %}
+                    <dt class="col-sm-3">Notizen:</dt>
+                    <dd class="col-sm-9">{{ item.notes }}</dd>
+                    {% endif %}
+                </dl>
             </div>
         </div>
-        '''
-    else:
-        return f'<div class="alert alert-warning">Kein Artikel mit der ID <strong>{item_uid}</strong> gefunden.</div>'
+        
+        <div class="btn-group">
+            {% if current_user.is_admin() or item.created_by == current_user.id %}
+            <a href="{{ url_for('items.edit', id=item.id) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Bearbeiten
+            </a>
+            <button type="button" class="btn btn-danger" onclick="deleteItem({{ item.id }})">
+                <i class="bi bi-trash"></i> Löschen
+            </button>
+            {% endif %}
+            <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Zurück
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        {% if item.image_file %}
+        <img src="{{ url_for('static', filename='uploads/' + item.image_file) }}" 
+             class="img-fluid rounded shadow" alt="{{ item.name }}"
+             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHRleHQtYW5jaG9yPSJtaWRkbGUiIHg9IjIwMCIgeT0iMTUwIiBzdHlsZT0iZmlsbDojYWFhO2ZvbnQtd2VpZ2h0OmJvbGQ7Zm9udC1zaXplOjE2cHg7Zm9udC1mYW1pbHk6QXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWY7ZG9taW5hbnQtYmFzZWxpbmU6Y2VudHJhbCI+QmlsZCBuaWNodCBnZWZ1bmRlbjwvdGV4dD48L3N2Zz4=';">
+        {% else %}
+        <div class="bg-light p-5 text-center rounded">
+            <i class="bi bi-image" style="font-size: 3rem;"></i>
+            <p>Kein Bild vorhanden</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function deleteItem(id) {
+    if (confirm('Wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!')) {
+        fetch(`/items/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.href = '/items/';
+            } else {
+                alert('Fehler beim Löschen!');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

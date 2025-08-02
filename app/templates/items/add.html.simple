@@ -1,0 +1,68 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Neuer Artikel{% endblock %}
+
+{% block content %}
+<h1>Neuer Artikel</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name *</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Menge *</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="0" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="category_ids" class="form-label">Kategorie *</label>
+                        <select class="form-select" id="category_ids" name="category_ids" required>
+                            <option value="">Wählen...</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }} ({{ category.prefix }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="brand" class="form-label">Marke</label>
+                        <input type="text" class="form-control" id="brand" name="brand">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Standort</label>
+                        <input type="text" class="form-control" id="location" name="location">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notizen</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="image" class="form-label">Bild</label>
+                <input type="file" class="form-control" id="image" name="image" accept="image/*">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Speichern</button>
+            <a href="{{ url_for('items.index') }}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

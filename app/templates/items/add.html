@@ -1,303 +1,281 @@
 {% extends "layout/base.html" %}
 
-{% block title %}Neuer Artikel - Inventar{% endblock %}
+{% block title %}Neuer Artikel - Inventar v3{% endblock %}
 
 {% block content %}
 <div class="row">
-    <div class="col-12 col-lg-8 mx-auto">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">
-                    <i class="bi bi-plus-circle"></i> Neuer Artikel
-                </h4>
-            </div>
-            <div class="card-body">
-                <form method="POST" 
-                      enctype="multipart/form-data"
-                      action="{{ url_for('items.add') }}">
-                    
-                    <!-- CSRF Token -->
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    
-                    <!-- Error Messages -->
-                    <div id="form-errors">
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                                        {{ message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
-                    </div>
-
-                    <!-- Basic Information -->
-                    <fieldset class="mb-4">
-                        <legend class="h5 border-bottom pb-2">Grundinformationen</legend>
-                        
-                        <div class="row">
-                            <div class="col-md-8 mb-3">
-                                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="name" 
-                                       name="name" 
-                                       required
-                                       placeholder="z.B. Laptop Dell XPS 15"
-                                       hx-get="{{ url_for('items.check_duplicate') }}"
-                                       hx-trigger="blur changed delay:500ms"
-                                       hx-target="#name-feedback"
-                                       hx-include="[name='name']">
-                                <div id="name-feedback" class="form-text"></div>
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label for="quantity" class="form-label">Menge <span class="text-danger">*</span></label>
-                                <input type="number" 
-                                       class="form-control" 
-                                       id="quantity" 
-                                       name="quantity" 
-                                       value="1" 
-                                       min="0" 
-                                       required>
+    <div class="col-lg-10 mx-auto">
+        <h1 class="mb-4">
+            <i class="bi bi-plus-circle"></i> Neuer Artikel
+        </h1>
+        
+        <form method="POST" enctype="multipart/form-data" id="addItemForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <!-- Grundinformationen -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-info-circle"></i> Grundinformationen
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Bezeichnung <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" required 
+                                       placeholder="z.B. Laptop Dell Latitude 5520">
                             </div>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label">Menge <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" 
+                                       value="1" min="0" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
                                 <label for="brand" class="form-label">Marke</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="brand" 
-                                       name="brand"
-                                       placeholder="z.B. Dell"
-                                       list="brand-suggestions">
-                                <datalist id="brand-suggestions">
+                                <input type="text" class="form-control" id="brand" name="brand" 
+                                       list="brand-list" placeholder="z.B. Dell, Bosch, Apple">
+                                <datalist id="brand-list">
                                     <option value="Dell">
                                     <option value="HP">
                                     <option value="Lenovo">
                                     <option value="Apple">
                                     <option value="Bosch">
                                     <option value="Makita">
+                                    <option value="Siemens">
                                 </datalist>
                             </div>
-                            
-                            <div class="col-md-6 mb-3">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
                                 <label for="model" class="form-label">Modell</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="model" 
-                                       name="model"
-                                       placeholder="z.B. XPS 15 9520">
+                                <input type="text" class="form-control" id="model" name="model" 
+                                       placeholder="z.B. Latitude 5520">
                             </div>
                         </div>
-                    </fieldset>
-
-                    <!-- Categories -->
-                    <fieldset class="mb-4">
-                        <legend class="h5 border-bottom pb-2">Kategorien <span class="text-danger">*</span></legend>
-                        
-                        <div id="category-selector" class="mb-3">
-                            <div class="row g-2">
-                                {% for category in categories %}
-                                <div class="col-6 col-md-4 col-lg-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input category-checkbox" 
-                                               type="checkbox" 
-                                               name="category_ids" 
-                                               value="{{ category.id }}" 
-                                               id="cat-{{ category.id }}"
-                                               data-prefix="{{ category.prefix }}"
-                                               hx-post="{{ url_for('items.preview_id') }}"
-                                               hx-trigger="change"
-                                               hx-target="#id-preview"
-                                               hx-include="[name='category_ids']:checked">
-                                        <label class="form-check-label" for="cat-{{ category.id }}">
-                                            <i class="{{ category.icon or 'bi-tag' }}"></i>
-                                            {{ category.name }}
-                                            <small class="text-muted">({{ category.prefix }})</small>
-                                        </label>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="serial_number" class="form-label">Seriennummer</label>
+                        <input type="text" class="form-control" id="serial_number" name="serial_number" 
+                               placeholder="Optional">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Kategorisierung -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-folder"></i> Kategorisierung
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Kategorien <span class="text-danger">*</span></label>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Die erste Kategorie bestimmt die Artikel-ID (Präfix)
                         </div>
-                        
-                        <!-- ID Preview -->
-                        <div id="id-preview" class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> 
-                            Wählen Sie eine Kategorie aus, um die Artikel-ID zu generieren
-                        </div>
-                    </fieldset>
-
-                    <!-- Location & Storage -->
-                    <fieldset class="mb-4">
-                        <legend class="h5 border-bottom pb-2">Lagerort</legend>
                         
                         <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="location" class="form-label">Standort</label>
-                                <select class="form-select" id="location" name="location">
-                                    <option value="">-- Wählen --</option>
-                                    <option value="Lager">Lager</option>
-                                    <option value="Büro">Büro</option>
-                                    <option value="Werkstatt">Werkstatt</option>
-                                    <option value="Außenlager">Außenlager</option>
+                            {% for category in categories %}
+                            <div class="col-md-4 col-sm-6">
+                                <div class="form-check">
+                                    <input class="form-check-input category-checkbox" type="checkbox" 
+                                           name="category_ids" value="{{ category.id }}" 
+                                           id="cat-{{ category.id }}"
+                                           data-prefix="{{ category.prefix }}">
+                                    <label class="form-check-label" for="cat-{{ category.id }}">
+                                        {% if category.icon %}
+                                            <i class="{{ category.icon }}"></i>
+                                        {% endif %}
+                                        {{ category.name }} 
+                                        <small class="text-muted">({{ category.prefix }})</small>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div id="generated-id" class="alert alert-secondary" style="display: none;">
+                        <i class="bi bi-key"></i> Generierte ID: <strong id="preview-id"></strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Standort -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-geo-alt"></i> Standort
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="location" class="form-label">Hauptstandort</label>
+                                <input type="text" class="form-control" id="location" name="location" 
+                                       placeholder="z.B. Lager, Büro, Werkstatt">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="room" class="form-label">Raum</label>
+                                <input type="text" class="form-control" id="room" name="room" 
+                                       placeholder="z.B. R101">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="shelf" class="form-label">Regal/Platz</label>
+                                <input type="text" class="form-control" id="shelf" name="shelf" 
+                                       placeholder="z.B. A-3">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Finanzen & Zustand -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-currency-euro"></i> Finanzen & Zustand
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="purchase_price" class="form-label">Einkaufspreis (€)</label>
+                                <input type="number" class="form-control" id="purchase_price" 
+                                       name="purchase_price" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Verkaufspreis (€)</label>
+                                <input type="number" class="form-control" id="price" 
+                                       name="price" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="condition" class="form-label">Zustand</label>
+                                <select class="form-select" id="condition" name="condition">
+                                    <option value="Neu">Neu</option>
+                                    <option value="Gut" selected>Gut</option>
+                                    <option value="Gebraucht">Gebraucht</option>
+                                    <option value="Reparaturbedürftig">Reparaturbedürftig</option>
+                                    <option value="Defekt">Defekt</option>
                                 </select>
                             </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label for="room" class="form-label">Raum</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="room" 
-                                       name="room"
-                                       placeholder="z.B. R102">
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label for="shelf" class="form-label">Regal/Fach</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="shelf" 
-                                       name="shelf"
-                                       placeholder="z.B. A3-05">
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="weight" class="form-label">Gewicht (kg)</label>
+                                <input type="number" class="form-control" id="weight" 
+                                       name="weight" step="0.001" min="0" placeholder="0.000">
                             </div>
                         </div>
-                    </fieldset>
-
-                    <!-- Prices -->
-                    <fieldset class="mb-4">
-                        <legend class="h5 border-bottom pb-2">Preise</legend>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="purchase_price" class="form-label">Einkaufspreis</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">€</span>
-                                    <input type="number" 
-                                           class="form-control" 
-                                           id="purchase_price" 
-                                           name="purchase_price"
-                                           step="0.01"
-                                           min="0"
-                                           placeholder="0.00">
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="sale_price" class="form-label">Verkaufspreis</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">€</span>
-                                    <input type="number" 
-                                           class="form-control" 
-                                           id="sale_price" 
-                                           name="sale_price"
-                                           step="0.01"
-                                           min="0"
-                                           placeholder="0.00">
-                                </div>
-                            </div>
-                        </div>
-                    </fieldset>
-
-                    <!-- Details -->
-                    <fieldset class="mb-4">
-                        <legend class="h5 border-bottom pb-2">Details</legend>
-                        
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Beschreibung</label>
-                            <textarea class="form-control" 
-                                      id="description" 
-                                      name="description" 
-                                      rows="3"
-                                      placeholder="Detaillierte Beschreibung des Artikels..."></textarea>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="serial_number" class="form-label">Seriennummer</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="serial_number" 
-                                   name="serial_number"
-                                   placeholder="z.B. SN123456789">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="image" class="form-label">Bild</label>
-                            <input type="file" 
-                                   class="form-control" 
-                                   id="image" 
-                                   name="image"
-                                   accept="image/*"
-                                   hx-post="{{ url_for('items.upload_preview') }}"
-                                   hx-trigger="change"
-                                   hx-target="#image-preview"
-                                   hx-encoding="multipart/form-data">
-                            <div id="image-preview" class="mt-2"></div>
-                            <div class="form-text">Max. 10MB, JPG/PNG/WebP</div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="status" class="form-label">Status</label>
-                            <select class="form-select" id="status" name="status">
-                                <option value="available" selected>Verfügbar</option>
-                                <option value="in_use">In Verwendung</option>
-                                <option value="maintenance">Wartung</option>
-                                <option value="defective">Defekt</option>
-                                <option value="disposed">Entsorgt</option>
-                            </select>
-                        </div>
-                    </fieldset>
-
-                    <!-- Action Buttons -->
-                    <div class="d-flex gap-2 justify-content-end">
-                        <a href="{{ url_for('items.index') }}" 
-                           class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Abbrechen
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle"></i> Artikel erstellen
-                        </button>
                     </div>
-                </form>
+                </div>
             </div>
-        </div>
+            
+            <!-- Zusätzliche Informationen -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-card-text"></i> Zusätzliche Informationen
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notizen / Beschreibung</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4" 
+                                  placeholder="Zusätzliche Informationen, Besonderheiten, etc."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="tags" name="tags" 
+                               placeholder="z.B. büro, technik, wichtig (mit Komma trennen)">
+                        <small class="form-text text-muted">Tags mit Komma trennen</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Bild</label>
+                        <input type="file" class="form-control" id="image" name="image" 
+                               accept="image/*" onchange="previewImage(this)">
+                        <div id="image-preview" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between mb-5">
+                <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Abbrechen
+                </a>
+                <div>
+                    <button type="submit" name="action" value="save_and_new" class="btn btn-outline-primary">
+                        <i class="bi bi-save"></i> Speichern & Neu
+                    </button>
+                    <button type="submit" name="action" value="save" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Speichern
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- Alpine.js for enhanced interactivity -->
 <script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('itemForm', () => ({
-        selectedCategories: [],
-        
-        init() {
-            // Initialize any dynamic behavior
-        }
-    }))
-})
+// Category selection and ID preview
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.category-checkbox');
+    const previewDiv = document.getElementById('generated-id');
+    const previewId = document.getElementById('preview-id');
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            const checked = document.querySelectorAll('.category-checkbox:checked');
+            if (checked.length > 0) {
+                const prefix = checked[0].dataset.prefix;
+                previewId.textContent = prefix + '-XXXX';
+                previewDiv.style.display = 'block';
+            } else {
+                previewDiv.style.display = 'none';
+            }
+        });
+    });
+});
+
+// Image preview
+function previewImage(input) {
+    const preview = document.getElementById('image-preview');
+    preview.innerHTML = '';
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `
+                <img src="${e.target.result}" class="img-thumbnail" style="max-height: 200px;">
+                <p class="mt-2 text-muted">${input.files[0].name}</p>
+            `;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Form validation
+document.getElementById('addItemForm').addEventListener('submit', function(e) {
+    const checked = document.querySelectorAll('.category-checkbox:checked');
+    if (checked.length === 0) {
+        e.preventDefault();
+        alert('Bitte wählen Sie mindestens eine Kategorie aus!');
+        return false;
+    }
+});
 </script>
-
-<style>
-/* Custom styles for better form UX */
-.category-checkbox:checked + label {
-    color: var(--bs-primary);
-    font-weight: 500;
-}
-
-fieldset legend {
-    color: var(--bs-primary);
-    font-weight: 500;
-}
-
-#image-preview img {
-    max-width: 200px;
-    max-height: 200px;
-    object-fit: cover;
-    border-radius: 0.375rem;
-}
-</style>
 {% endblock %}

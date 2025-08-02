@@ -52,3 +52,24 @@ site/
 *.bak
 *.backup
 *_backup/
+
+# Temp fix scripts from our session
+fix_*.py
+debug_*.py
+quick_*.py
+auto_*.py
+test_*.py
+verify_*.py
+backup_*.py
+*_snippet.py
+
+# Temp shell scripts
+*.sh
+
+# Backup directories
+backup_*/
+inventar_v3/
+
+# Don't commit environment files
+.env
+.env.*
