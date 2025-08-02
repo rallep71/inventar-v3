@@ -8,6 +8,18 @@ from app import db
 from app.admin import admin
 from app.models import Category, Item, User
 
+# Admin-Decorator
+
+def admin_required(f):
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_admin():
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @admin.route('/')
 @admin_required
 def index():
@@ -21,16 +33,6 @@ def index():
     }
     
     return render_template('admin/index.html', stats=stats)
-
-# Admin-Decorator
-def admin_required(f):
-    @wraps(f)
-    @login_required
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_admin():
-            abort(403)
-        return f(*args, **kwargs)
-    return decorated_function
 
 # Kategorieverwaltung Hauptseite
 @admin.route('/categories')
