@@ -1,0 +1,193 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Kategorieverwaltung{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h2">
+                    <i class="bi bi-tags"></i> Kategorieverwaltung
+                </h1>
+                <button class="btn btn-primary" 
+                        hx-get="{{ url_for('admin.category_form') }}"
+                        hx-target="#category-modal .modal-content"
+                        data-bs-toggle="modal" 
+                        data-bs-target="#category-modal">
+                    <i class="bi bi-plus-circle"></i> Neue Kategorie
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Kategoriebaum -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Kategorie-Hierarchie</h5>
+                    
+                    <!-- Suchfeld -->
+                    <div class="mb-3">
+                        <input type="text" 
+                               class="form-control" 
+                               id="category-search"
+                               name="category-search"
+                               placeholder="Kategorien durchsuchen..."
+                               hx-get="{{ url_for('admin.search_categories') }}"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-target="#category-tree">
+                    </div>
+                    
+                    <!-- Kategoriebaum -->
+                    <div id="category-tree" 
+                         hx-get="{{ url_for('admin.category_tree') }}"
+                         hx-trigger="load">
+                        <div class="text-center py-3">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Lade Kategorien...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistik & Info -->
+        <div class="col-lg-4">
+            <!-- Statistik -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Statistik</h5>
+                    <div id="category-stats" 
+                         hx-get="{{ url_for('admin.category_stats') }}"
+                         hx-trigger="load">
+                        <p class="text-muted">Lade Statistiken...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Hinweise</h5>
+                    <ul class="mb-0">
+                        <li>Kategorien können beliebig verschachtelt werden</li>
+                        <li>Das Präfix wird für die automatische ID-Generierung verwendet</li>
+                        <li>Unterkategorien erben das Präfix der Hauptkategorie</li>
+                        <li>Kategorien mit Artikeln können nicht gelöscht werden</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal für Kategorie-Formulare -->
+<div class="modal fade" id="category-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Inhalt wird via HTMX geladen -->
+        </div>
+    </div>
+</div>
+
+<!-- Styles für Kategoriebaum -->
+<style>
+.category-tree {
+    list-style: none;
+    padding-left: 0;
+}
+
+.category-tree ul {
+    list-style: none;
+    padding-left: 1.5rem;
+}
+
+.category-item {
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+.category-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.category-item.active {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.category-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.category-toggle i {
+    transition: transform 0.2s;
+}
+
+.category-toggle.collapsed i {
+    transform: rotate(-90deg);
+}
+
+.category-prefix {
+    font-family: monospace;
+    background-color: #f8f9fa;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.category-count {
+    font-size: 0.875rem;
+}
+
+/* Drag & Drop Styles (für später) */
+.category-item.dragging {
+    opacity: 0.5;
+}
+
+.category-item.drag-over {
+    border-top: 2px solid #0d6efd;
+}
+</style>
+
+<!-- JavaScript für Interaktionen -->
+<script>
+// Kategorie-Toggle
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.category-toggle')) {
+        const toggle = e.target.closest('.category-toggle');
+        const categoryId = toggle.dataset.categoryId;
+        const childList = document.getElementById(`children-${categoryId}`);
+        
+        if (childList) {
+            toggle.classList.toggle('collapsed');
+            childList.classList.toggle('d-none');
+        }
+    }
+});
+
+// Nach Modal-Schluss Tree neu laden
+document.addEventListener('hidden.bs.modal', function (e) {
+    if (e.target.id === 'category-modal') {
+        htmx.trigger('#category-tree', 'load');
+        htmx.trigger('#category-stats', 'load');
+    }
+});
+
+// Kategorie löschen mit Bestätigung
+function deleteCategory(id, name) {
+    if (confirm(`Kategorie "${name}" wirklich löschen?\n\nAlle Unterkategorien werden ebenfalls gelöscht!`)) {
+        htmx.ajax('DELETE', `/admin/categories/${id}`, {
+            target: '#category-tree',
+            swap: 'outerHTML'
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,128 @@
+<!-- app/templates/admin/partials/category_form.html -->
+
+<div class="modal-header">
+    <h5 class="modal-title">
+        {% if category %}
+            <i class="bi bi-pencil"></i> Kategorie bearbeiten
+        {% else %}
+            <i class="bi bi-plus-circle"></i> Neue Kategorie
+        {% endif %}
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+<form hx-post="{{ url_for('admin.save_category', id=category.id if category else 0) }}"
+      hx-target="#category-tree"
+      hx-swap="outerHTML">
+    
+    <div class="modal-body">
+        <!-- Name -->
+        <div class="mb-3">
+            <label for="name" class="form-label">Name *</label>
+            <input type="text" 
+                   class="form-control" 
+                   id="name" 
+                   name="name"
+                   value="{{ category.name if category else '' }}"
+                   required
+                   autofocus>
+        </div>
+        
+        <!-- Präfix -->
+        <div class="mb-3">
+            <label for="prefix" class="form-label">Präfix *</label>
+            <input type="text" 
+                   class="form-control" 
+                   id="prefix" 
+                   name="prefix"
+                   value="{{ category.prefix if category else '' }}"
+                   pattern="[A-Z]{2,10}"
+                   title="2-10 Großbuchstaben"
+                   required
+                   {% if category and category.items.count() > 0 %}readonly{% endif %}>
+            <small class="form-text text-muted">
+                2-10 Großbuchstaben für die ID-Generierung (z.B. COMP für Computer)
+                {% if category and category.items.count() > 0 %}
+                <br><span class="text-warning">Kann nicht geändert werden, da bereits Artikel existieren.</span>
+                {% endif %}
+            </small>
+        </div>
+        
+        <!-- Übergeordnete Kategorie -->
+        <div class="mb-3">
+            <label for="parent_id" class="form-label">Übergeordnete Kategorie</label>
+            <select class="form-select" id="parent_id" name="parent_id">
+                <option value="">-- Hauptkategorie --</option>
+                {% for cat in available_parents %}
+                    {% if not category or cat.id != category.id %}
+                    <option value="{{ cat.id }}"
+                            {% if parent and parent.id == cat.id %}selected{% endif %}
+                            {% if category and category.parent_id == cat.id %}selected{% endif %}>
+                        {{ '— ' * cat.level }}{{ cat.name }}
+                    </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <small class="form-text text-muted">
+                Wählen Sie eine übergeordnete Kategorie für Unterkategorien
+            </small>
+        </div>
+        
+        <!-- Beschreibung -->
+        <div class="mb-3">
+            <label for="description" class="form-label">Beschreibung</label>
+            <textarea class="form-control" 
+                      id="description" 
+                      name="description"
+                      rows="3">{{ category.description if category else '' }}</textarea>
+        </div>
+        
+        <!-- Aktiv -->
+        <div class="form-check">
+            <input class="form-check-input" 
+                   type="checkbox" 
+                   id="is_active" 
+                   name="is_active"
+                   value="1"
+                   {% if not category or category.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="is_active">
+                Kategorie ist aktiv
+            </label>
+        </div>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Abbrechen
+        </button>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Speichern
+        </button>
+    </div>
+</form>
+
+<script>
+// Auto-Generierung des Präfix aus dem Namen
+document.getElementById('name').addEventListener('input', function(e) {
+    const prefixInput = document.getElementById('prefix');
+    if (!prefixInput.value && !prefixInput.readOnly) {
+        // Generiere Präfix aus den ersten Buchstaben der Wörter
+        const words = e.target.value.split(' ');
+        let prefix = '';
+        
+        for (const word of words) {
+            if (word.length > 0) {
+                prefix += word[0].toUpperCase();
+            }
+            if (prefix.length >= 4) break;
+        }
+        
+        // Falls zu kurz, fülle mit den nächsten Buchstaben auf
+        if (prefix.length < 2 && e.target.value.length >= 2) {
+            prefix = e.target.value.substring(0, 4).toUpperCase();
+        }
+        
+        prefixInput.value = prefix.replace(/[^A-Z]/g, '');
+    }
+});
+</script>

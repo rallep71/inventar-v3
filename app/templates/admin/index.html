@@ -1,0 +1,143 @@
+<!-- app/templates/admin/index.html -->
+{% extends "layout/base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h2 mb-4">
+        <i class="bi bi-speedometer2"></i> Admin Dashboard
+    </h1>
+
+    <div class="row g-4">
+        <!-- Kategorieverwaltung -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-tags"></i> Kategorieverwaltung
+                    </h5>
+                    <p class="card-text">Verwalten Sie Kategorien und Unterkategorien für die Artikel-Organisation.</p>
+                    <a href="{{ url_for('admin.categories') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-right"></i> Kategorien verwalten
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Benutzerverwaltung -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-people"></i> Benutzerverwaltung
+                    </h5>
+                    <p class="card-text">Benutzer anlegen, bearbeiten und Berechtigungen verwalten.</p>
+                    <a href="#" class="btn btn-primary disabled">
+                        <i class="bi bi-arrow-right"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teamverwaltung -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-people-fill"></i> Teamverwaltung
+                    </h5>
+                    <p class="card-text">Teams erstellen und Benutzer zuordnen.</p>
+                    <a href="#" class="btn btn-primary disabled">
+                        <i class="bi bi-arrow-right"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- System -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-gear"></i> Systemverwaltung
+                    </h5>
+                    <p class="card-text">Systemeinstellungen, Backups und Wartung.</p>
+                    <a href="#" class="btn btn-primary disabled">
+                        <i class="bi bi-arrow-right"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-journal-text"></i> Protokolle
+                    </h5>
+                    <p class="card-text">System- und Benutzeraktivitäten einsehen.</p>
+                    <a href="#" class="btn btn-primary disabled">
+                        <i class="bi bi-arrow-right"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistiken -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-graph-up"></i> Statistiken
+                    </h5>
+                    <p class="card-text">Detaillierte Auswertungen und Berichte.</p>
+                    <a href="#" class="btn btn-primary disabled">
+                        <i class="bi bi-arrow-right"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3>Schnellübersicht</h3>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ stats.total_items }}</h3>
+                    <p class="mb-0">Artikel gesamt</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ stats.total_categories }}</h3>
+                    <p class="mb-0">Kategorien</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-info">{{ stats.total_users }}</h3>
+                    <p class="mb-0">Benutzer</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ stats.total_teams }}</h3>
+                    <p class="mb-0">Teams</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -74,8 +74,9 @@ class Item(db.Model):
     team_id = db.Column(db.Integer, db.ForeignKey('teams.id'))
     
     # Relationships
-    categories = db.relationship('Category', secondary=item_categories, 
-                               lazy='subquery', backref=db.backref('items', lazy=True))
+    #categories = db.relationship('Category', secondary=item_categories, lazy='subquery', backref=db.backref('items', lazy=True))
+    #categories = db.relationship('Category', secondary='item_categories', back_populates='categories')
+    categories = db.relationship('Category', secondary='item_categories', back_populates='items')
     logs = db.relationship('Log', backref='item', lazy='dynamic', cascade='all, delete-orphan')
     creator = db.relationship('User', foreign_keys=[created_by], back_populates='created_items')
     team = db.relationship('Team', backref='items')
