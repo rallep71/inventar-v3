@@ -1,177 +1,292 @@
 {% extends "layout/base.html" %}
 
-{% block title %}QR-Scanner - Inventar{% endblock %}
+{% block title %}QR-Code Scanner{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12 col-md-8 col-lg-6 mx-auto">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">
-                    <i class="bi bi-qr-code-scan"></i> QR-Code Scanner
-                </h4>
-            </div>
-            <div class="card-body">
-                <!-- Scanner Container -->
-                <div id="scanner-container" class="mb-3">
-                    <div id="qr-reader" style="width: 100%;"></div>
-                    <div id="scanner-status" class="text-center mt-3">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Lade Scanner...</span>
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h2">
+                <i class="bi bi-qr-code-scan"></i> QR-Code Scanner
+            </h1>
+            <p class="text-muted">Scannen Sie einen QR-Code um zum Artikel zu gelangen</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Scanner Card -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <!-- Video Container -->
+                    <div id="scanner-container" class="mb-3 position-relative" style="max-width: 640px; margin: 0 auto;">
+                        <video id="scanner-video" class="w-100 rounded" style="display: none;"></video>
+                        <canvas id="scanner-canvas" class="w-100" style="display: none;"></canvas>
+                        
+                        <!-- Start Button -->
+                        <div id="start-scanner" class="p-5">
+                            <i class="bi bi-camera-video display-1 text-primary mb-3 d-block"></i>
+                            <button class="btn btn-primary btn-lg" onclick="startScanner()">
+                                <i class="bi bi-play-circle"></i> Scanner starten
+                            </button>
+                            <p class="text-muted mt-3">
+                                <small>Bitte erlauben Sie den Kamera-Zugriff wenn Sie dazu aufgefordert werden.</small>
+                            </p>
                         </div>
-                        <p class="mt-2">Scanner wird initialisiert...</p>
+                        
+                        <!-- Scanning Overlay -->
+                        <div id="scanning-overlay" class="position-absolute top-0 start-0 w-100 h-100 d-none">
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <div class="scanner-box"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Controls -->
+                    <div id="scanner-controls" class="d-none">
+                        <button class="btn btn-danger" onclick="stopScanner()">
+                            <i class="bi bi-stop-circle"></i> Scanner stoppen
+                        </button>
+                        <button class="btn btn-secondary" onclick="switchCamera()">
+                            <i class="bi bi-camera-video"></i> Kamera wechseln
+                        </button>
+                    </div>
+                    
+                    <!-- Result -->
+                    <div id="scan-result" class="mt-4 d-none">
+                        <div class="alert alert-success">
+                            <h5>QR-Code erkannt!</h5>
+                            <p class="mb-0">Weiterleitung zum Artikel...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Error Messages -->
+                    <div id="scan-error" class="mt-4 d-none">
+                        <div class="alert alert-danger">
+                            <h5>Fehler</h5>
+                            <p class="mb-0" id="error-message"></p>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Manual Input -->
-                <div class="mt-4">
-                    <h5>Manuelle Eingabe</h5>
-                    <form hx-get="{{ url_for('items.search_by_id') }}" 
-                          hx-target="#search-results" 
-                          hx-trigger="submit">
+            <!-- Alternative: Manual Input -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Alternative: Artikel-ID eingeben</h5>
+                    <form hx-get="/items/search" hx-target="#search-results" hx-trigger="submit">
                         <div class="input-group">
                             <input type="text" 
                                    name="item_uid" 
                                    class="form-control" 
-                                   placeholder="Artikel-ID eingeben (z.B. ELK-0001)"
+                                   placeholder="z.B. COMP-0001"
                                    required>
                             <button class="btn btn-primary" type="submit">
                                 <i class="bi bi-search"></i> Suchen
                             </button>
                         </div>
                     </form>
+                    <div id="search-results" class="mt-3"></div>
                 </div>
-
-                <!-- Search Results -->
-                <div id="search-results" class="mt-3"></div>
             </div>
-        </div>
 
-        <!-- Instructions -->
-        <div class="card mt-3">
-            <div class="card-body">
-                <h5><i class="bi bi-info-circle"></i> Anleitung</h5>
-                <ol class="mb-0">
-                    <li>Halten Sie den QR-Code vor die Kamera</li>
-                    <li>Der Scanner erkennt automatisch gültige Codes</li>
-                    <li>Sie werden direkt zum Artikel weitergeleitet</li>
-                    <li>Alternativ können Sie die ID manuell eingeben</li>
-                </ol>
+            <!-- Recent Scans -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Zuletzt gescannt</h5>
+                    <div id="recent-scans" hx-get="/items/recent-scans" hx-trigger="load">
+                        <p class="text-muted">Lade...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- QR Scanner Script -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const scanner = new Html5Qrcode("qr-reader");
-    const statusDiv = document.getElementById('scanner-status');
-    
-    // Scanner configuration
-    const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
-    };
-    
-    // Success callback
-    const onScanSuccess = (decodedText, decodedResult) => {
-        console.log('QR Code detected:', decodedText);
-        
-        // Stop scanner
-        scanner.stop().then(() => {
-            // Check if it's a valid item ID pattern
-            if (/^[A-Z]{3}-\d{4}$/.test(decodedText)) {
-                // Redirect to item detail
-                window.location.href = `/items/search/${decodedText}`;
-            } else {
-                // Show error
-                statusDiv.innerHTML = `
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Ungültiger QR-Code: ${decodedText}
-                    </div>
-                    <button class="btn btn-primary" onclick="restartScanner()">
-                        <i class="bi bi-arrow-clockwise"></i> Erneut scannen
-                    </button>
-                `;
-            }
-        }).catch(err => {
-            console.error('Failed to stop scanner:', err);
-        });
-    };
-    
-    // Error callback
-    const onScanError = (errorMessage) => {
-        // Ignore continuous scanning errors
-    };
-    
-    // Start scanner
-    Html5Qrcode.getCameras().then(devices => {
-        if (devices && devices.length) {
-            // Use back camera if available
-            const cameraId = devices.length > 1 ? devices[1].id : devices[0].id;
-            
-            scanner.start(
-                cameraId,
-                config,
-                onScanSuccess,
-                onScanError
-            ).then(() => {
-                statusDiv.style.display = 'none';
-            }).catch(err => {
-                console.error('Failed to start scanner:', err);
-                statusDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-circle"></i>
-                        Scanner konnte nicht gestartet werden: ${err}
-                    </div>
-                `;
-            });
-        } else {
-            statusDiv.innerHTML = `
-                <div class="alert alert-warning">
-                    <i class="bi bi-camera-video-off"></i>
-                    Keine Kamera gefunden
-                </div>
-            `;
-        }
-    }).catch(err => {
-        console.error('Failed to get cameras:', err);
-        statusDiv.innerHTML = `
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-circle"></i>
-                Kamera-Zugriff verweigert
-            </div>
-        `;
-    });
-    
-    // Restart scanner function
-    window.restartScanner = function() {
-        location.reload();
-    };
-    
-    // Cleanup on page leave
-    window.addEventListener('beforeunload', () => {
-        if (scanner.isScanning) {
-            scanner.stop();
-        }
-    });
-});
-</script>
-
+<!-- Scanner Styles -->
 <style>
-#qr-reader {
-    border: 2px solid var(--bs-primary);
-    border-radius: 0.375rem;
-    overflow: hidden;
+.scanner-box {
+    width: 250px;
+    height: 250px;
+    border: 3px solid #0d6efd;
+    border-radius: 10px;
+    position: relative;
+    animation: scan 2s infinite;
 }
 
-#qr-reader video {
-    width: 100% !important;
-    height: auto !important;
+.scanner-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #0d6efd;
+    animation: scan-line 2s infinite;
+}
+
+@keyframes scan {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes scan-line {
+    0%, 100% { top: 0; }
+    50% { top: 100%; }
+}
+
+#scanner-video, #scanner-canvas {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 </style>
+
+<!-- QR Scanner Script -->
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+<script>
+let codeReader = null;
+let selectedDeviceId = null;
+let videoInputDevices = [];
+
+async function startScanner() {
+    const video = document.getElementById('scanner-video');
+    const startDiv = document.getElementById('start-scanner');
+    const controls = document.getElementById('scanner-controls');
+    const overlay = document.getElementById('scanning-overlay');
+    const errorDiv = document.getElementById('scan-error');
+    
+    try {
+        // Verstecke Start-Button, zeige Video
+        startDiv.classList.add('d-none');
+        video.style.display = 'block';
+        controls.classList.remove('d-none');
+        overlay.classList.remove('d-none');
+        errorDiv.classList.add('d-none');
+        
+        // Initialisiere Scanner
+        codeReader = new ZXing.BrowserQRCodeReader();
+        
+        // Hole verfügbare Kameras
+        videoInputDevices = await codeReader.listVideoInputDevices();
+        
+        if (videoInputDevices.length === 0) {
+            throw new Error('Keine Kamera gefunden');
+        }
+        
+        // Wähle Rückkamera wenn verfügbar
+        selectedDeviceId = videoInputDevices[0].deviceId;
+        for (const device of videoInputDevices) {
+            if (device.label.toLowerCase().includes('back') || 
+                device.label.toLowerCase().includes('rear')) {
+                selectedDeviceId = device.deviceId;
+                break;
+            }
+        }
+        
+        // Starte Scanner
+        await codeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
+            if (result) {
+                handleScanResult(result.text);
+            }
+        });
+        
+    } catch (err) {
+        console.error(err);
+        showError(err.message || 'Kamera-Zugriff verweigert');
+        stopScanner();
+    }
+}
+
+function handleScanResult(text) {
+    console.log('QR Code gefunden:', text);
+    
+    // Vibriere wenn möglich
+    if ('vibrate' in navigator) {
+        navigator.vibrate(200);
+    }
+    
+    // Zeige Erfolg
+    document.getElementById('scan-result').classList.remove('d-none');
+    
+    // Stoppe Scanner
+    stopScanner();
+    
+    // Prüfe ob es eine Item-URL ist
+    if (text.includes('/items/')) {
+        // Extrahiere Item-ID
+        const match = text.match(/\/items\/(\d+)/);
+        if (match) {
+            const itemId = match[1];
+            // Weiterleitung mit kurzer Verzögerung
+            setTimeout(() => {
+                window.location.href = `/items/${itemId}`;
+            }, 1000);
+        }
+    } else if (text.match(/^[A-Z]+-\d+$/)) {
+        // Sieht aus wie eine Item-UID (z.B. COMP-0001)
+        // Suche nach dem Item
+        searchByUid(text);
+    } else {
+        // Unbekanntes Format
+        showError('Unbekannter QR-Code Format: ' + text);
+    }
+}
+
+function searchByUid(uid) {
+    // HTMX Request um Item zu finden
+    htmx.ajax('GET', `/items/search?item_uid=${uid}`, {
+        target: '#search-results',
+        swap: 'innerHTML'
+    }).then(() => {
+        // Scroll zu Ergebnissen
+        document.getElementById('search-results').scrollIntoView({ behavior: 'smooth' });
+    });
+}
+
+function stopScanner() {
+    if (codeReader) {
+        codeReader.reset();
+        codeReader = null;
+    }
+    
+    const video = document.getElementById('scanner-video');
+    const startDiv = document.getElementById('start-scanner');
+    const controls = document.getElementById('scanner-controls');
+    const overlay = document.getElementById('scanning-overlay');
+    
+    video.style.display = 'none';
+    startDiv.classList.remove('d-none');
+    controls.classList.add('d-none');
+    overlay.classList.add('d-none');
+}
+
+async function switchCamera() {
+    if (!videoInputDevices || videoInputDevices.length <= 1) {
+        return;
+    }
+    
+    // Finde nächste Kamera
+    const currentIndex = videoInputDevices.findIndex(d => d.deviceId === selectedDeviceId);
+    const nextIndex = (currentIndex + 1) % videoInputDevices.length;
+    selectedDeviceId = videoInputDevices[nextIndex].deviceId;
+    
+    // Neustart mit neuer Kamera
+    stopScanner();
+    startScanner();
+}
+
+function showError(message) {
+    const errorDiv = document.getElementById('scan-error');
+    const errorMsg = document.getElementById('error-message');
+    
+    errorMsg.textContent = message;
+    errorDiv.classList.remove('d-none');
+}
+
+// Cleanup beim Verlassen der Seite
+window.addEventListener('beforeunload', () => {
+    stopScanner();
+});
+</script>
 {% endblock %}

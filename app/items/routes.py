@@ -596,3 +596,78 @@ def quick_edit(id):
         abort(403)
     
     return render_template('items/partials/quick_edit.html', item=item)
+# Füge diese Routes zu app/items/routes.py hinzu:
+
+@items.route("/search")
+@login_required
+def search():
+    """Search for items by UID - used by scanner"""
+    item_uid = request.args.get('item_uid', '').strip()
+    
+    if not item_uid:
+        return '<p class="text-muted">Bitte geben Sie eine Artikel-ID ein.</p>'
+    
+    # Suche nach exakter ID
+    item = Item.query.filter_by(item_uid=item_uid).first()
+    
+    if item:
+        # Prüfe Berechtigung
+        if not current_user.is_admin() and item.team_id != current_user.team_id:
+            return '<div class="alert alert-warning">Keine Berechtigung für diesen Artikel.</div>'
+        
+        # Return redirect für HTMX
+        return f'''
+        <div class="alert alert-success">
+            <h5>Artikel gefunden!</h5>
+            <p>{item.name} ({item.item_uid})</p>
+            <a href="/items/{item.id}" class="btn btn-primary btn-sm">
+                <i class="bi bi-eye"></i> Artikel anzeigen
+            </a>
+        </div>
+        '''
+    else:
+        # Suche nach ähnlichen
+        similar = Item.query.filter(
+            Item.item_uid.like(f'%{item_uid}%')
+        ).limit(5).all()
+        
+        if similar:
+            html = '<div class="alert alert-info"><p>Artikel nicht gefunden. Meinten Sie:</p><ul>'
+            for item in similar:
+                if current_user.is_admin() or item.team_id == current_user.team_id:
+                    html += f'<li><a href="/items/{item.id}">{item.item_uid} - {item.name}</a></li>'
+            html += '</ul></div>'
+            return html
+        else:
+            return '<div class="alert alert-danger">Artikel nicht gefunden.</div>'
+
+
+@items.route("/recent-scans")
+@login_required
+def recent_scans():
+    """Get recent item views for current user"""
+    # Hole die letzten angesehenen Artikel
+    recent_logs = Log.query.filter_by(
+        user_id=current_user.id,
+        action='view'
+    ).order_by(Log.timestamp.desc()).limit(5).all()
+    
+    if not recent_logs:
+        return '<p class="text-muted">Noch keine Scans vorhanden.</p>'
+    
+    html = '<div class="list-group">'
+    for log in recent_logs:
+        if log.item:  # Falls Item noch existiert
+            html += f'''
+            <a href="/items/{log.item.id}" class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{log.item.item_uid}</strong> - {log.item.name}
+                    </div>
+                    <small class="text-muted">{log.timestamp.strftime('%H:%M')}</small>
+                </div>
+            </a>
+            '''
+    html += '</div>'
+    
+    return html
