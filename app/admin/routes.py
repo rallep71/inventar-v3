@@ -229,17 +229,17 @@ def add_item_count(category):
     category.item_count = category.items.count()
     for child in category.children:
         add_item_count(child)
-
 def get_category_hierarchy(exclude_id=None):
     """Hole alle Kategorien mit Level-Information für Einrückung"""
     categories = []
     
     def add_categories(parent_id, level):
-        cats = Category.query.filter_by(parent_id=parent_id).all()
+        cats = Category.query.filter_by(parent_id=parent_id).order_by(Category.name).all()
         for cat in cats:
             if exclude_id and cat.id == exclude_id:
                 continue
-            cat.level = level
+            # Füge level als separates Attribut hinzu (nicht das @property überschreiben)
+            cat._display_level = level
             categories.append(cat)
             add_categories(cat.id, level + 1)
     

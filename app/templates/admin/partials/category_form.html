@@ -58,7 +58,7 @@
                     <option value="{{ cat.id }}"
                             {% if parent and parent.id == cat.id %}selected{% endif %}
                             {% if category and category.parent_id == cat.id %}selected{% endif %}>
-                        {{ '— ' * cat.level }}{{ cat.name }}
+                        {{ '— ' * cat._display_level }}{{ cat.name }}
                     </option>
                     {% endif %}
                 {% endfor %}
